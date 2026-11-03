@@ -5,7 +5,7 @@
 (() => {
   'use strict';
   const W = 48, H = 32, PAD = 1;
-  const IMAGES = {selfie:'assets/person.jpg', indoor:'assets/room.jpg', outdoor:'assets/park.jpg'};
+  const IMAGES = {selfie:'assets/person.jpg', indoor:'assets/room.jpg', outdoor:'assets/park.jpg', zselfie:'../../assets/003Z-selfie.png'};
   const FILTERS = {
     blur: {name:'平均化（ぼかし）',short:'Blur',mat:Array(9).fill(1/9),disp:'1/9'},
     sx: {name:'左右の変化（Sobel X）',short:'Edge X',mat:[-1,0,1,-2,0,2,-1,0,1]},
