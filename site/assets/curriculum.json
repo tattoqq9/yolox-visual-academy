@@ -1,0 +1,59 @@
+{
+  "title": "YOLOX Visual Academy",
+  "version": "0.2.0-prepublish",
+  "locale": "ja-JP",
+  "units": [
+    {
+      "id": "01-cnn",
+      "title": "画像から特徴マップへ",
+      "status": "prototype-ready",
+      "chapters": [
+        "画像とRGB",
+        "3×3畳み込み",
+        "特徴マップ",
+        "出力チャネル",
+        "次の層とStride",
+        "NumPy実装"
+      ],
+      "textbook": "learn/01-cnn.html",
+      "lab": "lab/01-cnn/index.html",
+      "starter": "downloads/unit01_numpy_starter.zip"
+    },
+    {
+      "id": "02-grid",
+      "title": "格子と受容野",
+      "status": "prototype-ready",
+      "chapters": [
+        "Strideと畳み込み",
+        "理論受容野",
+        "P3/P4/P5格子",
+        "YOLOXのBBox Decode",
+        "SimOTA幾何候補",
+        "研究者の問いと実装"
+      ],
+      "textbook": "learn/02-stride-grid.html",
+      "lab": "lab/02-grid/index.html",
+      "starter": "downloads/unit02_numpy_starter.zip"
+    },
+    {
+      "id": "03-yolox",
+      "title": "YOLOX内部構造",
+      "status": "planned"
+    },
+    {
+      "id": "04-bbox",
+      "title": "BBox・SimOTA・Loss",
+      "status": "planned"
+    },
+    {
+      "id": "05-implementation",
+      "title": "YOLOX-Nanoスクラッチ実装",
+      "status": "planned"
+    },
+    {
+      "id": "06-signed-ltrb",
+      "title": "Signed LTRB発明演習",
+      "status": "planned"
+    }
+  ]
+}

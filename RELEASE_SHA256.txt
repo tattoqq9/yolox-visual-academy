@@ -1,0 +1,2 @@
+Source of site/: YOLOX_Visual_Academy_GitHubPages_v0_2.zip
+Original zip SHA256: ecf29c697e9b2d47c3d1cf8b47ba3fd4f70a1aced347c1633608e4f3d7fad4fa
