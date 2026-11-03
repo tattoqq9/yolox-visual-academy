@@ -22,10 +22,10 @@
         <p class="hero-desc">「畳み込み」が本当は何を計算しているのか。自分の目で見て、1つずつ動かして、最後はNumPyで実装します。</p>
         <div class="hero-cta"><button class="primary-btn" id="guideBtn" type="button"><span id="guideIcon">▶</span><span id="guideText">最初から解説を見る</span></button><span class="duration">6つの章 · 自分のペースで学習</span></div>
       </div>
-      <div class="hero-art" aria-hidden="true"><div class="art-photo"><img src="assets/person.jpg" alt=""></div><div class="art-grid"></div><div class="art-chip art-chip-top">RGB <b>→</b> 数値</div><div class="art-chip art-chip-bottom">3×3 Kernel <b>→</b> 特徴量</div></div>
+      <div class="hero-art" aria-hidden="true"><div class="art-photo"><img src="../../assets/003Z-selfie.png" alt=""></div><div class="art-grid"></div><div class="art-chip art-chip-top">RGB <b>→</b> 数値</div><div class="art-chip art-chip-bottom">3×3 Kernel <b>→</b> 特徴量</div></div>
     </section>
 
-    <div class="public-notice" role="note">初期画像はオリジナルの合成イラストです。追加の<strong>「セルフィー（写真）」</strong>でも畳み込みを試せます。<strong>「＋ 自分の画像を使う」</strong>から任意の写真を選べます。画像はブラウザ内だけで処理し、送信しません。</div>
+    <div class="public-notice" role="note">初期画像に<strong>「セルフィー（写真）」</strong>を使用しています。合成サンプル画像にも切り替えられます。<strong>「＋ 自分の画像を使う」</strong>から任意の写真を選べます。画像はブラウザ内だけで処理し、送信しません。</div>
     <section class="workspace" aria-label="CNN体験シミュレータ">
       <div class="workspace-head">
         <div><p class="eyebrow compact">YOUR LEARNING SPACE</p><h2>一つずつ、実際に動かして理解する</h2></div>
@@ -41,10 +41,10 @@
       </nav>
 
       <div class="image-picker" aria-label="入力画像の選択"><span class="picker-label"><span class="small-circle"></span> 入力画像を選ぶ</span>
-        <button class="photo-option active" data-image="selfie" type="button"><img src="assets/person.jpg" alt=""><span>人物（合成）</span></button>
+        <button class="photo-option" data-image="selfie" type="button"><img src="assets/person.jpg" alt=""><span>人物（合成）</span></button>
         <button class="photo-option" data-image="indoor" type="button"><img src="assets/room.jpg" alt=""><span>室内（合成）</span></button>
         <button class="photo-option" data-image="outdoor" type="button"><img src="assets/park.jpg" alt=""><span>屋外（合成）</span></button>
-        <button class="photo-option" data-image="zselfie" type="button"><img src="../../assets/003Z-selfie.png" alt="カフェで撮影したセルフィー写真"><span>セルフィー（写真）</span></button>
+        <button class="photo-option active" data-image="zselfie" type="button"><img src="../../assets/003Z-selfie.png" alt="カフェで撮影したセルフィー写真"><span>セルフィー（写真）</span></button>
         <label class="upload-btn" for="customImage"><span>＋</span> 自分の画像を使う<input id="customImage" type="file" accept="image/png,image/jpeg,image/webp"></label>
       </div>
 
@@ -81,6 +81,6 @@
     <footer class="site-footer"><a href="../../learn/01-cnn.html">対応する教科書を読む ↗</a><span>YOLOX Visual Lab — Unit 01</span><span>教育用の小規模CNNです。YOLOX本体の学習済み重み・内部特徴マップとは異なります。</span></footer>
   </main>
 </div>
-<script src="app.js"></script>
+<script src="app.js?v=20261104-selfie-default"></script>
 </body>
 </html>

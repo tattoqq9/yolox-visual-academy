@@ -52,7 +52,7 @@
     ]}
   ];
   const $=s=>document.querySelector(s);
-  const state = {step:0, beat:0, image:'selfie', x:22,y:12, outX:11,outY:6, grid:true,
+  const state = {step:0, beat:0, image:'zselfie', x:22,y:12, outX:11,outY:6, grid:true,
     filter:'blur',channelMode:'gray',term:0,scanIndex:0,scanPlaying:false, flowStride:2,flowChannel:0,
     guidePlaying:false,guideTimer:null,guideSpeed:1,scanTimer:null,customUrl:null, mathReveal:false};
   const data = {source:null,raw:null,r:null,g:null,b:null,gray:null,stage1:{},stage2:[],stage2W:24,stage2H:16};
@@ -485,7 +485,7 @@
     inputGray:()=>data.gray?.slice(),
     scanTo:n=>{state.scanIndex=clamp(n,0,W*H);render();}
   };
-  initEvents();loadImage(IMAGES.selfie,'selfie');
+  initEvents();loadImage(IMAGES.zselfie,'zselfie');
   const requestedStep = Number(new URLSearchParams(window.location.search).get('step'));
   if (Number.isInteger(requestedStep) && requestedStep>=1 && requestedStep<=6) {
     state.step=requestedStep-1;
