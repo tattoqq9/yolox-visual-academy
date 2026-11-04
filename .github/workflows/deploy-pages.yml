@@ -33,6 +33,12 @@ jobs:
         run: node --check site/lab/03-nano/app.js
       - name: Check Unit 03-C JavaScript syntax
         run: node --check site/lab/03-fpn-head/app.js
+      - name: Test Unit 04 math and numerical contracts
+        run: node --test tests/unit04_math.test.cjs
+      - name: Check Unit 04 JavaScript syntax
+        run: |
+          node --check site/lab/04-detection/math.js
+          node --check site/lab/04-detection/app.js
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static files

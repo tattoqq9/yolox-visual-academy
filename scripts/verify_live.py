@@ -39,6 +39,13 @@ PATHS = {
     'lab/03-fpn-head/trace.json': b'yolox-academy.neck-head-trace.v1',
     'learn/03-fpn-head.html': b'YOLOX',
     'downloads/unit03c_pytorch_starter.zip': b'PK\x03\x04',
+    'lab/04-detection/index.html': b'BBox',
+    'lab/04-detection/math.js': b'classificationCost' if False else b'classifyCost',
+    'lab/04-detection/app.js': b'trace04.json',
+    'lab/04-detection/styles.css': None,
+    'lab/04-detection/trace04.json': b'yva.unit04.untrained-head-raw.v1',
+    'learn/04-detection.html': b'BBox',
+    'downloads/unit04_python_starter.zip': b'PK\x03\x04',
 }
 
 

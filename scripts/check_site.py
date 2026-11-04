@@ -52,9 +52,9 @@ def main():
                 # Unit 02 uses #step-N as a JavaScript router; these are not DOM ids.
                 if target == (root/'lab/02-grid/index.html') and re.fullmatch(r'step-[1-5]',sp.fragment): continue
                 failures.append(f'{file.relative_to(root)}: anchor not found: {raw}')
-    for mandatory in ('lab/01-cnn/index.html','lab/02-grid/index.html','lab/03-block/index.html','lab/03-nano/index.html','lab/03-fpn-head/index.html',
-                      'learn/01-cnn.html','learn/02-stride-grid.html','learn/03-block.html','learn/03-nano.html','learn/03-fpn-head.html',
-                      'downloads/unit01_numpy_starter.zip','downloads/unit02_numpy_starter.zip','downloads/unit03_numpy_starter.zip','downloads/unit03b_pytorch_starter.zip','downloads/unit03c_pytorch_starter.zip',
+    for mandatory in ('lab/01-cnn/index.html','lab/02-grid/index.html','lab/03-block/index.html','lab/03-nano/index.html','lab/03-fpn-head/index.html','lab/04-detection/index.html',
+                      'learn/01-cnn.html','learn/02-stride-grid.html','learn/03-block.html','learn/03-nano.html','learn/03-fpn-head.html','learn/04-detection.html',
+                      'downloads/unit01_numpy_starter.zip','downloads/unit02_numpy_starter.zip','downloads/unit03_numpy_starter.zip','downloads/unit03b_pytorch_starter.zip','downloads/unit03c_pytorch_starter.zip','downloads/unit04_python_starter.zip','lab/04-detection/trace04.json','lab/04-detection/math.js',
                       '.nojekyll'):
         if not (root/mandatory).is_file(): failures.append(f'missing essential: {mandatory}')
     for file in root.rglob('*'):

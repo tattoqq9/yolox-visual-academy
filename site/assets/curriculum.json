@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.3.2-unit03c",
+  "version": "0.4.0-unit04-prototype",
   "locale": "ja-JP",
   "units": [
     {
@@ -77,8 +77,20 @@
     },
     {
       "id": "04-bbox",
-      "title": "BBox・SimOTA・Loss",
-      "status": "planned"
+      "title": "BBox Decode・IoU・NMS・SimOTA・Lossと勾配",
+      "status": "prototype-ready",
+      "chapters": [
+        "raw → BBox Decode",
+        "IoUと小物体の感度",
+        "推論時のNMS",
+        "SimOTAとDynamic K",
+        "Lossと偏微分",
+        "Pythonスクラッチ実装"
+      ],
+      "textbook": "learn/04-detection.html",
+      "lab": "lab/04-detection/index.html",
+      "starter": "downloads/unit04_python_starter.zip",
+      "note": "Step01のみ実PyTorch未学習raw。Step02〜04のGT・候補は教育用人工値"
     },
     {
       "id": "05-implementation",
