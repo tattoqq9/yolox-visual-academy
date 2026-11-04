@@ -1,0 +1,15 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const path=require('node:path'),fs=require('node:fs');
+const M=require('../site/lab/03-blocks/math.js');
+const fixture=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/unit03a_expected.json'),'utf8'));
+const close=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol,`expected ${b} but got ${a}`);
+function createInput(){const t=M.newTensor(32,48,3);for(let y=0;y<32;y++)for(let x=0;x<48;x++)for(let c=0;c<3;c++)M.put(t,y,x,c,((y*13+x*7+c*11)%97)/97);return t;}
+test('Conv stride2/pad1: 32x48x3→16x24x4',()=>{const r=M.run(createInput());assert.deepEqual([r.conv.h,r.conv.w,r.conv.c],[16,24,4]);assert.deepEqual([r.csp.fused.h,r.csp.fused.w,r.csp.fused.c],[16,24,4]);});
+test('all 27 convolution terms equal the unrounded forward value',()=>{const r=M.run(createInput());for(const [y,x,c] of [[0,0,0],[1,3,2],[15,23,1],[9,13,3]]){const terms=M.convTerms(r.input,r.weights,y,x,c);assert.equal(terms.length,27);close(terms.reduce((z,p)=>z+p.product,0),M.at(r.conv,y,x,c),1e-12);}});
+test('convolution zero padding and signed kernels',()=>{const t=M.newTensor(3,3,1);t.values.fill(1);const w=[[[1,1,1,1,1,1,1,1,1]]];const y=M.conv2d(t,w,{stride:1,pad:1,k:3});close(M.at(y,0,0,0),4);close(M.at(y,1,1,0),9);});
+test('BatchNorm spatial means equal beta and variance positive',()=>{let x=M.run(createInput(),{gamma:1.15,beta:-.1});for(let c=0;c<4;c++){let mu=0;for(let y=0;y<16;y++)for(let z=0;z<24;z++)mu+=M.at(x.bn,y,z,c);close(mu/(16*24),-.1,1e-10);assert.ok(x.stats[c].var>0);}});
+test('SiLU is smooth around zero with correct signed output',()=>{close(M.silu(0),0);close(M.silu(1),1/(1+Math.exp(-1)));close(M.silu(-1),-1/(1+Math.exp(1)));assert.ok(M.silu(-1)<0);});
+test('CSP channel concat preserves ordering and shortcut effect',()=>{let r=M.run(createInput());for(let y of [0,7,15])for(let x of [0,8,23])for(let c=0;c<2;c++){close(M.at(r.csp.joined,y,x,c),M.at(r.csp.main,y,x,c));close(M.at(r.csp.joined,y,x,2+c),M.at(r.csp.branch1,y,x,c));close(M.at(r.csp.main,y,x,c),M.at(r.csp.branch0,y,x,c)+M.at(r.csp.inner2,y,x,c));}let s=M.run(createInput(),{shortcut:false});assert.ok(Math.abs(M.at(r.csp.fused,1,3,2)-M.at(s.csp.fused,1,3,2))>1e-6);});
+test('browser pure math matches independent Python NumPy golden vectors',()=>{const input=createInput();for(let shortcut of [true,false]){const r=M.run(input,{gamma:fixture.gamma,beta:fixture.beta,shortcut});for(const [name,vals] of Object.entries(fixture.expected)){if((name==='csp_no_shortcut')!==!shortcut)continue;const t=name==='csp'||name==='csp_no_shortcut'?r.csp.fused:r[name];for(let i=0;i<fixture.locations.length;i++){const [y,x,c]=fixture.locations[i];close(M.at(t,y,x,c),vals[i],1e-9);}}if(shortcut){r.stats.forEach((s,i)=>{close(s.mean,fixture.mean[i],1e-10);close(s.var,fixture.var[i],1e-10);});}}});
+test('wrong shape or invalid batchnorm epsilon fails closed',()=>{const input=M.newTensor(1,1,3);assert.throws(()=>M.batchNormSpatial(input,{eps:0}));assert.throws(()=>M.add(M.newTensor(1,1,1),M.newTensor(1,1,2)));});

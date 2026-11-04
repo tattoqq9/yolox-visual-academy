@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="YOLOXをゼロから理解する。セルフィーからConv・BatchNorm・SiLU・CSP構造まで、実際の計算値を追跡する無料インタラクティブ教材。">
+<title>Unit 03-A | Conv → BN → SiLU → CSP — YOLOX Visual Academy</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a href="#workspace" class="skip">実験へ移動</a>
+<header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="../../index.html"><span class="mark">Y·</span><span>YOLOX Visual Academy<small>Unit 03-A / CNN Blockを自作する</small></span></a><nav><a href="../../learn/03-blocks.html">教科書</a><a href="../02-grid/index.html">← Unit 02</a><a href="../../index.html">全ユニット</a></nav></div></header>
+<main>
+<section class="hero"><div class="wrap hero-inner"><div><span class="eyebrow">UNIT 03-A / THE NETWORK INSIDE</span><h1>画像から、特徴へ。<br><em>計算を全部可視化。</em></h1><p>Conv・BatchNorm・SiLU・CSP。ひとつのセルフィー画像から始め、入力の値が各Blockを通過する過程を追います。表示している特徴マップは、ブラウザ内で計算した結果です。</p><div class="hero-cta"><button id="startBtn" class="primary">▶ 6ステップを体験する</button><a class="outline" href="../../learn/03-blocks.html">教科書を先に読む</a></div><p class="mini-note">固定した教育用の重みを使用。学習済みYOLOXの推論結果ではありません。元の画像は端末内でのみ扱います。</p></div><div class="hero-image"><img src="../../assets/003Z-selfie.png" alt="CNNの計算を試すためのセルフィー画像"><div class="hero-image-footer"><b>003Z-selfie.png</b><span>RGB → 48×32×3</span></div></div></div></section>
+<section class="workspace wrap" id="workspace"><div class="section-heading"><div><span class="eyebrow">INTERACTIVE COMPUTATION</span><h2>1つの値が、次の層へ渡るまで</h2><p>上から順に選び、各計算の入力・重み・出力を確かめます。</p></div><div class="progress"><span id="progressText">01 / 06</span><div class="progress-track"><span id="progressFill"></span></div></div></div>
+<nav class="steps" aria-label="実験ステップ"><button class="selected" data-stage="0"><small>01</small>画像とRGB</button><button data-stage="1"><small>02</small>Conv</button><button data-stage="2"><small>03</small>BatchNorm</button><button data-stage="3"><small>04</small>SiLU</button><button data-stage="4"><small>05</small>CSP構造</button><button data-stage="5"><small>06</small>自分で実装</button></nav>
+<div class="image-choose"><b>入力画像</b><button data-image="photo" class="chosen"><img src="../../assets/003Z-selfie.png" alt=""><span>セルフィー</span></button><button data-image="person"><img src="../01-cnn/assets/person.jpg" alt=""><span>合成サンプル</span></button><label class="upload" for="fileInput">＋ 自分の画像を使う <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label><span id="imageStatus" role="status">端末内で処理中</span></div>
+<div class="pipeline" aria-label="ConvからCSPまでのデータの流れ"><div class="pipe-node"><span>INPUT</span><b>48×32×3</b></div><span class="pipe-arrow">→</span><div class="pipe-node" data-pipeline="1"><span>Conv 3×3</span><b>24×16×4</b></div><span class="pipe-arrow">→</span><div class="pipe-node" data-pipeline="2"><span>BN</span><b>24×16×4</b></div><span class="pipe-arrow">→</span><div class="pipe-node" data-pipeline="3"><span>SiLU</span><b>24×16×4</b></div><span class="pipe-arrow">→</span><div class="pipe-node" data-pipeline="4"><span>CSP-like</span><b>24×16×4</b></div></div>
+<div class="lab-grid"><div class="visual">
+<div class="card visual-card"><div class="card-header"><div><span class="eyebrow">LIVE INPUT</span><h3>入力画像と選択位置</h3></div><span id="pixelLabel" class="tiny-chip">入力 (24,16)</span></div><div class="canvas-photo"><canvas id="photoCanvas" width="720" height="480" aria-label="入力画像の選択位置。クリックで移動できます"></canvas></div><p class="caption">画像をクリックすると計算位置が変わります。教育用に48×32へ縮小しています。</p></div>
+<div class="card map-card"><div class="card-header"><div><span class="eyebrow">ACTUAL COMPUTED VALUES</span><h3 id="mapHeading">RGB入力</h3></div><span id="tensorShape" class="tiny-chip">48×32×3</span></div><div class="map-and-info"><canvas id="mapCanvas" width="600" height="400" aria-label="実際の計算で得られた特徴マップ"></canvas><div class="map-side"><label for="channel">表示チャネル</label><select id="channel"></select><div class="number-box"><small>選択位置の値</small><strong id="mapValue">—</strong></div><div class="number-box"><small>構造上の重み数（固定）</small><strong id="paramCount">—</strong></div><p class="caption">表示色はチャネルごとの最大絶対値に基づく可視化。計算値は正規化前の値です。</p></div></div></div>
+<div class="card spatial-card"><div class="card-header"><div><span class="eyebrow">3D-LIKE TENSOR VIEW</span><h3>チャネルを重ねて見る</h3></div><span class="tiny-chip">計算値から描画</span></div><canvas id="stackCanvas" width="900" height="260" aria-label="入力・畳み込み・特徴マップを3D風に積層表示"></canvas><p class="caption">奥行きはチャネルの概念表現であり、物理的な3D空間や実際のニューラルネットワーク配置ではありません。</p></div>
+</div>
+<aside class="lesson card"><div class="card-header"><div><span class="eyebrow" id="lessonKicker">LESSON 01</span><h3 id="lessonTitle">画像は数値配列</h3></div><span id="stageNum" class="tiny-chip">01 / 06</span></div><p id="lessonLead">画像から始めます。</p><div id="explanation" class="explanation" aria-live="polite"></div><div id="controls" class="controls"></div><div class="lesson-actions"><button id="prevStage" class="outline">← 前のステップ</button><button id="nextStage" class="primary">次へ →</button></div></aside></div>
+<div class="lesson-links"><a href="../../learn/03-blocks.html">📖 対応する教科書を見る</a><a href="../../downloads/unit03a_numpy_starter.zip" download>⌨ NumPy実装課題を取得</a><a href="../../index.html">全ユニットへ戻る</a></div>
+</section>
+<section class="footer-note wrap"><h2>なぜ「固定重み」から始めるのか？</h2><p>学習済みモデルの特徴量は複雑で、初学者には計算過程を追いにくいためです。ここでは人が指定した重みで <strong>Conv → BatchNorm → SiLU → CSP型の分岐・結合</strong> を正確に計算します。次のUnit 03-Bでは公式YOLOX-Nanoの構造と実テンソルへの対応を扱います。</p><p>なお、このUnitのCSPブロックは分岐・ボトルネック・残差・結合を説明する教育用簡略形で、公式YOLOX CSPLayer内部のすべてのBatchNorm層を再現したものではありません。</p></section>
+</main>
+<footer class="footer"><div class="wrap"><span>YOLOX Visual Academy · v0.3 preview / Unit 03-A</span><span>教科書 × 数式 × 実験 × スクラッチ実装</span></div></footer>
+<script src="math.js"></script><script src="app.js"></script>
+</body></html>
