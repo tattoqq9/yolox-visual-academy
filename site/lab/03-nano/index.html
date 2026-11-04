@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="YOLOX-Nanoの実際のPyTorch演算から抽出したFocus・dark2〜dark5の特徴テンソルを3Dで操作する教材。未学習重みの注意事項を明示。">
+  <title>Unit 03-B｜YOLOX-Nanoの実構造とテンソル — Visual Academy</title>
+  <link rel="stylesheet" href="styles.css?v=0.3b">
+</head>
+<body>
+  <a class="skip" href="#lab">操作画面へ移動</a>
+  <header class="sitebar">
+    <a href="../../index.html" class="brand"><span class="emblem">Y<span>·</span></span><span>YOLOX Visual Academy<small>Unit 03-B / ACTUAL NETWORK</small></span></a>
+    <nav><a href="../../learn/03-nano.html">教科書</a><a href="../03-block/index.html">← Unit 03-A</a></nav>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">ARCHITECTURE LAB · PYTORCH TRACE</div>
+        <h1>YOLOX-Nanoの内部を、<em>数値でたどる。</em></h1>
+        <p>Unit 03-Aの小さなCNNから、実際のNanoの構造へ。416×416の画像が、Focusと5段階のBackboneを通過する様子を操作して理解します。</p>
+        <div class="actions"><a href="#lab" class="button primary">実際のテンソルを見る</a><a href="../../learn/03-nano.html" class="button outline">教科書を読む</a></div>
+      </div>
+      <div class="hero-photo"><img src="input416.jpg" alt="セルフィー画像を416×416に前処理した入力。下側にはpaddingがある"><span>416×416 / preprocessing</span></div>
+    </section>
+    <section class="integrity" aria-label="可視化データの出所">
+      <div class="mark"><span aria-hidden="true">i</span></div>
+      <p><strong id="sourceTitle">データを読み込み中</strong><span id="sourceDetails">実際のPyTorch forwardからテンソルを取得します。学習済みの検出モデルであるとは限りません。</span></p>
+    </section>
+    <section id="lab" class="lab">
+      <div class="section-head"><div><span class="eyebrow">EXPLORE / NUMBERS ARE REAL</span><h2>ひとつの入力から、どこまで情報がつながる？</h2><p>最初に見たい領域を選び、3D表示・数値・コードを行き来してください。</p></div><div class="summary" id="modelSummary" aria-live="polite">モデル情報を読み込み中…</div></div>
+      <div class="tab-bar" role="tablist" aria-label="実験を選ぶ">
+        <button id="tab-flow" class="tab active" role="tab" aria-selected="true" aria-controls="panel-flow" data-tab="flow">01 Backboneの流れ</button>
+        <button id="tab-depthwise" class="tab" role="tab" aria-selected="false" aria-controls="panel-depthwise" data-tab="depthwise">02 Depthwiseの理由</button>
+        <button id="tab-csp" class="tab" role="tab" aria-selected="false" aria-controls="panel-csp" data-tab="csp">03 CSPの分岐</button>
+      </div>
+      <div class="panels">
+        <section class="panel" id="panel-flow" role="tabpanel" aria-labelledby="tab-flow">
+          <div class="stage-list" id="stageList" aria-label="Backboneの各段階"></div>
+          <div class="columns">
+            <div class="viz-card">
+              <div class="card-head"><div><span class="eyebrow">ROTATABLE 3D VIEW</span><h3>特徴マップを重ねて見る</h3></div><span class="mono muted" id="shapeTag">—</span></div>
+              <canvas id="stack3d" width="960" height="470" tabindex="0" aria-label="実際の特徴マップ3チャネルを積層した立体表示。ポインタのドラッグで回転"></canvas>
+              <div class="toolbar"><span>ドラッグして回転・下のスライダーで角度変更</span><button id="resetView" type="button">視点リセット</button><button id="playStages" type="button">▶ 層を順に見る</button></div>
+              <div class="orientation"><label>左右の回転 <output id="yawVal">28°</output><input id="yaw" type="range" min="-75" max="75" value="28"></label><label>上下の回転 <output id="pitchVal">27°</output><input id="pitch" type="range" min="-25" max="65" value="27"></label></div>
+              <div class="axis-note">板1枚＝1つの特徴チャネル。表示する3チャネルは全チャネル中のサンプルです。奥行きは実空間ではありません。</div>
+            </div>
+            <div class="inspect-card">
+              <span class="eyebrow">INSPECT ONE TENSOR</span><h3 id="stageTitle">—</h3><p id="stageExplain">—</p>
+              <dl class="numbers"><div><dt>テンソル形状 (N,C,H,W)</dt><dd id="stageShape">—</dd></div><div><dt>入力に対するStride</dt><dd id="stageStride">—</dd></div><div><dt>このStageのパラメータ</dt><dd id="stageParams">—</dd></div><div><dt>特徴マップの範囲</dt><dd id="stageMinMax">—</dd></div></dl>
+              <p class="control-label">観察するチャネル</p><div class="channel-picker" id="channelPicker"></div>
+              <div class="heat-title"><strong>実際の出力値（選択チャネル）</strong><span class="muted">クリックして数値確認</span></div>
+              <canvas id="heatMap" width="416" height="416" aria-label="選択した出力チャネルの実テンソル値を色で表したヒートマップ"></canvas>
+              <div class="reading" id="pixelReadout" aria-live="polite">マップ上の位置をクリックしてください</div>
+              <details><summary>この層をPyTorchで見るには？</summary><pre id="codeSnippet"></pre><p>ここに示すshapeと数値は実際にforwardを実行して取得したものです。3D表示は値の立体的な見せ方です。</p></details>
+            </div>
+          </div>
+          <div class="takeaway"><strong>つなげて考える</strong><p>Focusは画像を4分割して個別に処理するのではなく、偶奇位置をチャネルへ並べ替えます。dark3・dark4・dark5はBackboneの出力であり、最終のP3・P4・P5はPAFPNでさらに統合された後に得られます。</p></div>
+        </section>
+        <section class="panel hidden" id="panel-depthwise" role="tabpanel" aria-labelledby="tab-depthwise">
+          <div class="concept"><h3>Standard ConvとDepthwise Separable Convは、なぜ計算量が違う？</h3><p>同じ入力チャネル数・出力チャネル数・Kernelサイズで、畳み込み部分のパラメータ数を計算します。YOLOX-Nanoは、対応箇所にDepthwise＋Pointwiseを採用します。</p></div>
+          <div class="comparison-controls"><label>入力チャネル C<sub>in</sub><select id="cin"><option>16</option><option>32</option><option selected>64</option><option>128</option><option>256</option></select></label><label>出力チャネル C<sub>out</sub><select id="cout"><option>16</option><option>32</option><option selected>64</option><option>128</option><option>256</option></select></label><label>Kernel幅 K<select id="kernelSize"><option selected>3</option><option>5</option></select></label></div>
+          <div class="comparison"><div><span class="eyebrow">STANDARD CONV</span><div class="huge" id="standardCount">—</div><p>重み：C<sub>in</sub> × C<sub>out</sub> × K²</p><div class="bartrack"><span id="standardBar"></span></div><small>全入力チャネルと全出力チャネルをK×Kで結合</small></div><div><span class="eyebrow">DEPTHWISE + POINTWISE</span><div class="huge" id="depthCount">—</div><p>重み：C<sub>in</sub> × K² + C<sub>in</sub> × C<sub>out</sub></p><div class="bartrack"><span id="depthBar"></span></div><small>まずチャネル独立の空間演算、その後1×1でチャネルを混合</small></div></div>
+          <div class="formula-strip"><div id="savingText">—</div><p>上記はConvの重みのみ。YOLOXの `DWConv` は両方のConvにBatchNormとSiLUを持ち、BNの学習パラメータも加わります。</p></div>
+          <div class="source-nodes"><span>StandardConv<br><small>1回のK×K</small></span><span>vs</span><span>Depthwise K×K<br><small>groups = C<sub>in</sub></small></span><span>→</span><span>Pointwise 1×1<br><small>channel mix</small></span></div>
+        </section>
+        <section class="panel hidden" id="panel-csp" role="tabpanel" aria-labelledby="tab-csp">
+          <div class="concept"><h3>YOLOXのCSPLayerを、2本の本物の経路で追う</h3><p>ここでは <code>dark3.1</code> 内の出力を取得。両経路はそれぞれ1×1 Convで生成され、片方だけがBottleneck群を通り、Concat後に最後の1×1 Convで統合されます。</p></div>
+          <div class="csp-graph"><div class="node">入力<br><small>64ch × 52×52</small></div><div class="branch-pair"><div class="node">Conv1 1×1<br><small>32ch</small><span>↓</span>Bottleneck×3<br><small>32ch</small></div><div class="node">Conv2 1×1<br><small>32ch</small><span>↓</span>別経路</div></div><div class="node">Concat（チャネル方向）<br><small>64ch</small></div><div class="node">Conv3 1×1 → 64ch</div></div>
+          <p class="control-label">確認する中間点を選ぶ</p><div class="csp-picker" id="branchPicker"></div>
+          <div class="csp-inspector"><div><canvas id="cspMap" width="416" height="416" aria-label="選んだCSP内部の実数値特徴マップ"></canvas></div><div><h4 id="branchTitle">—</h4><p id="branchDescription">—</p><dl class="numbers"><div><dt>形状</dt><dd id="branchShape">—</dd></div><div><dt>このモジュールのパラメータ</dt><dd id="branchParams">—</dd></div></dl><div class="channel-picker" id="branchChannels"></div><div class="reading" id="branchPixel">中間テンソルの値をクリックで確認できます</div><pre id="cspCode">a = self.m(self.conv1(x))
+b = self.conv2(x)
+return self.conv3(torch.cat((a, b), dim=1))</pre></div></div>
+          <div class="takeaway"><strong>Unit 03-Aとの違い</strong><p>Unit 03-Aでは生チャネルを分割する概念モデルでしたが、実際のYOLOXでは各枝に学習可能な1×1 Convがあり、Bottleneck内部にもDepthwise・Pointwiseの重みがあります。</p></div>
+        </section>
+      </div>
+    </section>
+    <section class="continue"><div><span class="eyebrow">WATCH → INSPECT → CODE</span><h2>実際のshapeを自分で再現する。</h2><p>Focus・Depthwise・CSPLayerをPyTorchで実装し、公式のNano構成に対応づけて検証します。</p></div><div class="continue-links"><a href="../../learn/03-nano.html">教科書を開く</a><a href="../../downloads/unit03b_pytorch_starter.zip" download>PyTorch演習を入手</a><a href="../../code/unit03b/START_HERE.md">WSLでの実行方法</a></div></section>
+  </main>
+  <footer>YOLOX Visual Academy · Unit 03-B · <a href="https://github.com/Megvii-BaseDetection/YOLOX">公式YOLOX</a> · 学習済みモデルの検出結果ではありません</footer>
+  <script src="app.js?v=0.3b"></script>
+</body>
+</html>

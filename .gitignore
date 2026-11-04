@@ -8,3 +8,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Avoid accidental publication of model checkpoints or experimental traces
+*.pth
+*.pt
+*.ckpt
+**/trace_trained*.json
+.venv-unit03b/

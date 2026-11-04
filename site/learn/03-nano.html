@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unit 03-B 教科書｜本物のYOLOX-Nano構造</title><link rel="stylesheet" href="../assets/site.css">
+<style>.tablewrap{overflow-x:auto}.nano-table{width:100%;border-collapse:collapse;font-size:14px}.nano-table th,.nano-table td{padding:10px;border-bottom:1px solid #dae5dc;text-align:left;white-space:nowrap}.nano-table th{background:#e5f1e9}.method{background:#f1f7f2;border-left:4px solid #408a70;border-radius:7px;padding:14px 18px;margin:20px 0}.warning{background:#fbefde;border-left:4px solid #bb8951;border-radius:7px;padding:14px 18px;margin:20px 0}.mono{font:13px/1.6 ui-monospace,Consolas,monospace}.task{background:white;border:1px solid #d7e5dc;padding:18px;border-radius:11px;margin:14px 0}.task summary{font-weight:780;cursor:pointer}.back{display:inline-block;margin:22px 0}.preview{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid #d7e5dc;border-radius:12px;padding:15px}.preview a{font-weight:750}@media(max-width:650px){.preview{display:block}}</style>
+</head><body>
+<header class="site-header"><div class="wrap head-row"><a href="../index.html" class="brand">YOLOX Visual Academy</a><a href="../lab/03-nano/index.html">実験室を開く →</a></div></header>
+<main class="wrap" style="max-width:950px;padding-block:27px 65px">
+<a class="back" href="../index.html">← カリキュラムへ戻る</a>
+<div class="eyebrow">UNIT 03-B / OFFICIAL TOPOLOGY</div>
+<h1>YOLOX-NanoのBackboneを実装できるようになるまで</h1>
+<p>Unit 03-Aでは小さな固定重みのCNNでConv・BN・SiLU・CSPの概念を学びました。ここでは、公式YOLOX-Nano（2021年公開設定）に対応する本格的なPyTorchネットワークへ進みます。**教科書を読む前と読んだ後**に、同じセルフィー画像から計算されたテンソルを実験室で観察してください。</p>
+<div class="preview"><div><strong>この教科書と対応する実験</strong><p>Focus → dark2 → dark3 → dark4 → dark5 を3Dで回転し、実際の出力値、CSPの分岐、Depthwiseのパラメータ数を確認します。</p><a href="../lab/03-nano/index.html">Unit 03-Bの操作型教材へ</a></div></div>
+<div class="warning"><strong>最重要：本教材に同梱したテンソルの意味</strong><p>公開版の数値は、公式アーキテクチャに対応したモデルをPyTorchでforwardした結果です。ただし、**重みは固定seedでランダム初期化されており、学習済みモデルではありません**。数値・shape・チャネル演算の確認には使えますが、「このチャネルが顔を学習した」などとは解釈できません。学習済み公式チェックポイントを安全に取得した場合は、後述のexporterで別のtraceを作れます。</p></div>
+<h2 id="model">1. Nanoの設定を正しく読む</h2>
+<p>公式 <a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/exps/default/yolox_nano.py">yolox_nano.py</a> は <code>depth=0.33</code>、<code>width=0.25</code>、<code>depthwise=True</code>、基本入力416×416です。これは画像サイズのスケールではなく、ネットワーク内での層数とチャネル幅を調節する設定です。</p>
+<div class="method"><strong>本教材の80クラスモデル</strong><p>モデル全体の学習パラメータ数：<b>912,159個</b>（約0.91M）。内訳はBackbone 459,968、PAFPN 347,424、Head 104,767です。学習用の頭部1クラスモデルでは、Headの最後の分類層が異なるため、総数が変わります。</p></div>
+<h2 id="shapes">2. Focusからdark5までのテンソルを予測する</h2>
+<p>YOLOXのテンソル形状は <code>[N,C,H,W]</code>（バッチ・チャネル・高さ・幅）の順序です。416×416画像1枚の場合、次の値になります。</p>
+<div class="tablewrap"><table class="nano-table"><thead><tr><th>出力段階</th><th>チャネル</th><th>高さ×幅</th><th>累積Stride</th><th>その段階の学習パラメータ</th></tr></thead><tbody>
+<tr><td>入力</td><td>3</td><td>416×416</td><td>1</td><td>―</td></tr>
+<tr><td>Focus stem</td><td>16</td><td>208×208</td><td>2</td><td>1,760</td></tr>
+<tr><td>dark2</td><td>32</td><td>104×104</td><td>4</td><td>3,680</td></tr>
+<tr><td>dark3</td><td>64</td><td>52×52</td><td>8</td><td>18,560</td></tr>
+<tr><td>dark4</td><td>128</td><td>26×26</td><td>16</td><td>69,888</td></tr>
+<tr><td>dark5</td><td>256</td><td>13×13</td><td>32</td><td>366,080</td></tr>
+</tbody></table></div>
+<p>これらは公式 <a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/darknet.py">CSPDarknet</a> に相当する構成で得られる値です。dark3・dark4・dark5は**Backboneの中間特徴**です。最終的に検出に使うP3/P4/P5は、これらをPAFPNで統合した後の特徴です。PAFPN自体の視覚化はUnit 03-Cで扱います。</p>
+<p><a href="../lab/03-nano/index.html">実験：Focus～dark5を順番に選ぶ</a>。各段階で空間サイズが半分になり、チャネルが2倍になることを確認してください。</p>
+<h2 id="focus">3. Focusは何をしているのか</h2>
+<p>Focusは入力の偶数行・奇数行と偶数列・奇数列の組合せから、4組の位置情報をチャネル方向へ並べ替えます。**空間を間引いて情報を捨てる操作ではなく、位置をチャネルへ再配置する操作**です。</p>
+<pre class="code"><code># [1, 3, 416, 416] → [1, 12, 208, 208]
+patch_tl = x[..., ::2, ::2]
+patch_bl = x[..., 1::2, ::2]
+patch_tr = x[..., ::2, 1::2]
+patch_br = x[..., 1::2, 1::2]
+x = torch.cat((patch_tl,patch_bl,patch_tr,patch_br), dim=1)
+# 12入力チャネル → 3×3 Conv → 16出力チャネル</code></pre>
+<p>Focusの後にBatchNormとSiLUを伴う3×3 Convが続きます。入力の空間次元が半分となるのはFocusの再配置によるものです。</p>
+<h2 id="dw">4. Depthwise Separable Convのパラメータ数</h2>
+<p>通常のStandard Convはすべての入力チャネルと出力チャネルをK×Kで結びます。Depthwiseはまず入力チャネルごとに独立したK×Kを行い、Pointwise 1×1でチャネルを混合します。</p>
+<pre class="code"><code>StandardConv weights = C_in * C_out * K * K
+Depthwise+Pointwise weights = C_in * K * K + C_in * C_out</code></pre>
+<p>例：入力64ch、出力64ch、3×3ならStandardは <b>36,864</b> 個、Depthwise+Pointwiseは <b>4,672</b> 個の重みです（BatchNormのγ・βを含みません）。</p>
+<p>注意：公式のDWConvはDepthwise、Pointwiseの両方でBNとSiLUを使います。BN学習パラメータを含む場合は別途数えます。演算量の削減率は、出力の空間サイズにも依存します。</p>
+<h2 id="csp">5. CSPが「2分岐」と呼ばれる理由</h2>
+<p>YOLOXのCSPLayerは、単に入力テンソルを2つにスライスして再結合する構造ではありません。入力から**別々の1×1 Convで2本の枝を作り**、一方をBottleneck群へ通し、もう一方とConcatしてから最後の1×1 Convで出力へ変換します。</p>
+<pre class="code"><code># YOLOXのCSPLayer概念（module名は公式に対応）
+a = self.m(self.conv1(x))
+b = self.conv2(x)
+y = torch.cat((a, b), dim=1)
+return self.conv3(y)</code></pre>
+<p>たとえばdark3のCSPは、64入力ch → 32ch + 32ch → Concatで64ch → 最終64chとなります。中間Bottleneckは3回です。Concat後も同じ値が保持されるとは限らず、最後のConvによって各チャネルの情報が混合されます。</p>
+<h2 id="real">6. 本当に「実際のYOLOX」を表示していると言えるか？</h2>
+<p>重要なのは、図とPyTorchの計算が同一であることです。今回のtraceは各StageへのForward Hookで取得し、JSONに保存したチャネルの数値をブラウザで表示します。3D板は表示方法であり、特徴テンソルそのものはPyTorchから取得しています。**未学習の特徴は、意味のある物体特徴をまだ獲得していません。**</p>
+<div class="method"><strong>実モデルの学習済み特徴を見たい場合</strong><p>公式のYOLOX-Nano 80クラス用チェックポイントを本人のWSLで取得し、リポジトリ内の <code>tools/unit03b/export_trace.py</code> に <code>--weights</code> を与えます。学習済みを確認した場合は <code>--checkpoint-status verified-pretrained</code> を指定できます。指定しなければ学習状態未確認と表示します。重みの出所・互換性を検証し、権利確認なしに生成物や重みを公開しないでください。公開版のtraceを書き換えず、まず別パスへ出力して比較することを推奨します。</p></div>
+<h2 id="practice">7. スクラッチ実装演習</h2>
+<p><a href="../downloads/unit03b_pytorch_starter.zip">学生用PyTorchスターターを取得</a>して、<code>Focus</code>、<code>DWConv</code>、<code>CSPLayer</code>の一部を実装してください。出力形状・パラメータ数・チャネルの結合順序が検証対象です。</p>
+<details class="task"><summary>問1：Focusの4組がどの順序で並ぶか説明できる？</summary><p>416×416×3が208×208×12になる理由と、位置にある画素値が消えていないことを数値で確認してください。</p></details>
+<details class="task"><summary>問2：groups=C_in とすると各Kernelは何を受け取る？</summary><p>Standard、Depthwise、Pointwiseで、入力と重みの次元をそれぞれ書き出してください。</p></details>
+<details class="task"><summary>問3：dark3のCSPでConcatする直前・直後の形は？</summary><p>2本の1×1 Convの出力チャネル数を予測し、Concatで変わる次元を答えてください。</p></details>
+<details class="task"><summary>問4：暗い画像や小さい頭部では深い層で何が起こる？</summary><p>空間解像度の低下、受容野、表現能力を分けて考えてください。まだ「このチャネルが頭部を認識した」とは断定しないこと。</p></details>
+<hr>
+<p><small>出典：<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/exps/default/yolox_nano.py">公式YOLOX-Nano experiment</a>、<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/darknet.py">CSPDarknet</a>、<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/network_blocks.py">ネットワークBlock実装</a>。独立教材のコードは原実装を参照した教育用再実装です。YOLOX公式コードはApache-2.0ライセンスです。</small></p>
+</main></body></html>

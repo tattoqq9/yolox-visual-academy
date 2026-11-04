@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.3.0-unit03a",
+  "version": "0.3.1-unit03b",
   "locale": "ja-JP",
   "units": [
     {
@@ -42,6 +42,22 @@
       "textbook": "learn/03-block.html",
       "lab": "lab/03-block/index.html",
       "starter": "downloads/unit03_numpy_starter.zip"
+    },
+    {
+      "id": "03-nano",
+      "title": "YOLOX-Nano実構造と実測テンソル",
+      "status": "prototype-ready",
+      "chapters": [
+        "Focusの空間→チャネル再配置",
+        "DepthwiseとStandard Conv",
+        "dark2〜dark5のshape",
+        "CSPの本物の分岐",
+        "PyTorchスクラッチ実装"
+      ],
+      "textbook": "learn/03-nano.html",
+      "lab": "lab/03-nano/index.html",
+      "starter": "downloads/unit03b_pytorch_starter.zip",
+      "note": "公開traceは固定seedの未学習重み"
     },
     {
       "id": "04-bbox",
