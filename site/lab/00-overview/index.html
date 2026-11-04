@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="YOLOXは画像からどうやって頭の位置を見つけるのか。RGB、畳み込み、Backbone、PAFPN、Head、BBoxを全体図で学ぶ入門。">
+  <title>Unit 00｜AIはどうやって頭を見つけるのか？｜YOLOX Visual Academy</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">本文へ移動する</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html" aria-label="YOLOX Visual Academyトップページへ"><span class="brand-mark">Y<span>·</span></span><span>YOLOX Visual Academy<small>UNIT 00 · まず全体の流れを見る</small></span></a>
+    <nav class="topnav" aria-label="関連教材"><a href="../../learn/00-overview.html">教科書</a><a href="../01-cnn/index.html" class="topnav-primary">次：Unit 01 <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">VISUAL INTRODUCTION · UNIT 00</p>
+        <h1>AIは、どうやって<br><em>頭を見つける</em>のか。</h1>
+        <p class="lead">写真を見て「頭がある」と答えるだけでなく、<strong>どこに、いくつあるか</strong>を予測する。その一連の流れを、最初に眺めてみましょう。</p>
+        <div class="hero-actions"><a class="btn primary" href="#journey">全体の流れを体験する <span aria-hidden="true">↓</span></a><a class="btn ghost" href="#terms">用語を先に確認</a></div>
+        <p class="small-print">数式やPythonの知識はまだ不要です。ここでは「何をしているか」を掴みます。</p>
+      </div>
+      <div class="hero-showcase" aria-label="説明用の写真と頭部領域の概念図">
+        <img src="../../assets/003Z-selfie.png" alt="頭部検出の流れを学ぶためのセルフィー画像。頭の位置を手作業で概念的に囲んでいる" width="960" height="640">
+        <span class="head-outline"><span>HEAD · 概念例</span></span>
+        <div class="hero-showcase-caption">人手で示した領域の例。AIの検出結果ではありません。</div>
+      </div>
+    </section>
+
+    <section class="definition-band" aria-label="まず理解する2つの違い">
+      <div class="definition-title"><span class="mini-num">00 — 01</span><h2>「何がある？」と「どこにある？」は違う。</h2></div>
+      <div class="compare-cards">
+        <article class="compare-card">
+          <div class="compare-header"><span class="icon-round">A</span><div><h3>画像分類 <span lang="en">Classification</span></h3><p>画像全体を1つの単位として、何が写っているか答える。</p></div></div>
+          <div class="compare-result"><span class="mini-label">例：画像全体の予測</span><strong>「頭部を含む画像」</strong></div>
+        </article>
+        <article class="compare-card highlight">
+          <div class="compare-header"><span class="icon-round">B</span><div><h3>物体検出 <span lang="en">Detection</span></h3><p>対象の種類に加えて、画像内の位置と範囲を予測する。</p></div></div>
+          <div class="compare-result"><span class="mini-label">例：頭部検出</span><strong>「頭部」というクラス ＋ 領域（BBox）</strong></div>
+        </article>
+      </div>
+      <p class="subtle-note">YOLOXは物体検出モデルです。Headには分類の出力もありますが、単なる画像全体の分類器とは異なります。人物を特定する「顔認証」とも別の課題です。</p>
+    </section>
+
+    <section class="learning-journey" id="journey" aria-label="YOLOXの全体処理を順番に体験">
+      <div class="section-heading"><span class="mini-num">00 — 02</span><div><h2>1枚の写真が、BBoxになるまで。</h2><p>6つの処理をタップしてみてください。右の説明と左の表示が連動します。</p></div></div>
+      <div class="journey-toolbar">
+        <div class="player-actions"><button type="button" id="playFlow" class="btn primary" aria-pressed="false"><span id="playIcon" aria-hidden="true">▶</span> <span id="playLabel">最初から再生</span></button><button type="button" id="prevFlow" class="btn outline" aria-label="前の処理へ">← 戻る</button><button type="button" id="nextFlow" class="btn outline">次へ →</button></div>
+        <div class="progress-group"><span id="stepCount" aria-live="polite">1 / 6</span><div class="progress-track" aria-hidden="true"><div id="progressFill"></div></div></div>
+      </div>
+      <nav class="flow-nav" aria-label="処理の順番">
+        <button type="button" class="flow-node is-active" data-stage="0" aria-current="step"><span class="node-num">01</span><strong>入力</strong><small>RGB画像</small></button>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <button type="button" class="flow-node" data-stage="1"><span class="node-num">02</span><strong>畳み込み</strong><small>小さな計算</small></button>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <button type="button" class="flow-node" data-stage="2"><span class="node-num">03</span><strong>Backbone</strong><small>特徴を抽出</small></button>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <button type="button" class="flow-node" data-stage="3"><span class="node-num">04</span><strong>PAFPN</strong><small>特徴を統合</small></button>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <button type="button" class="flow-node" data-stage="4"><span class="node-num">05</span><strong>Head</strong><small>3系統の予測</small></button>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <button type="button" class="flow-node" data-stage="5"><span class="node-num">06</span><strong>検出結果</strong><small>候補を整理</small></button>
+      </nav>
+      <div class="stage-layout">
+        <div class="stage-visual">
+          <div class="visual-top"><span class="visual-status"><i></i> <span id="visualStatus">INPUT / RGB</span></span><span id="visualShape">横960 × 縦640</span></div>
+          <div class="stage-image" id="stageImage">
+            <img src="../../assets/003Z-selfie.png" alt="説明に使うセルフィー写真" width="960" height="640">
+            <div class="stage-image-grid" id="stageGrid" aria-hidden="true"></div>
+            <div class="demo-kernel" id="kernelOverlay" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="illustrative-box" id="illustrativeBox" hidden><span>頭部（説明用の範囲）</span></div>
+            <div class="stage-image-dim" id="stageDim" hidden></div>
+            <div class="stage-image-caption" id="imageCaption">入力はRGB画像です。ここではまだ頭の位置は計算していません。</div>
+          </div>
+          <div class="tensor-illustration" id="tensorIllustration" aria-label="特徴マップを重ねて示した模式図" hidden>
+            <div class="tensor-layers"><div class="tensor-plane plane-one"></div><div class="tensor-plane plane-two"></div><div class="tensor-plane plane-three"></div></div>
+            <span id="tensorCaption">特徴マップは数値が並んだ配列です。重ねた板はチャネルの概念図です。</span>
+          </div>
+          <div class="prediction-branches" id="predictionBranches" hidden>
+            <div><b>BBox</b><small>位置と大きさ（4値）</small></div><div><b>Objectness</b><small>物体らしさ（1値）</small></div><div><b>Classification</b><small>クラスの予測値</small></div>
+          </div>
+        </div>
+        <article class="stage-explain" aria-live="polite" aria-atomic="true">
+          <p class="stage-kicker" id="stageKicker">STEP 01 / INPUT</p>
+          <h3 id="stageTitle">AIが受け取るのは、色の数値。</h3>
+          <p id="stageBody">写真は小さな画素（Pixel）の集まりです。各画素には赤（R）・緑（G）・青（B）の数値が入っています。</p>
+          <div class="stage-concept"><span>ここで覚える言葉</span><h4 id="termName">Pixel（画素）</h4><p id="termDescription">画像を構成する1つの位置。カラー画像では通常R/G/Bの3値を持ちます。</p></div>
+          <div class="stage-example" id="stageExample">画像を「人が見る写真」ではなく「数値が並んだ配列」と考えてみましょう。</div>
+          <a id="stageLink" href="../01-cnn/index.html?step=1" class="stage-link">この仕組みを詳しく学ぶ：Unit 01 →</a>
+        </article>
+      </div>
+      <p class="scientific-notice"><strong>表示データの区別：</strong>上の動き・BBox・数字は説明用の概念図です。学習済みYOLOXによる推論結果ではありません。下の「実PyTorch数値を覗く」では別途、未学習重みの実テンソルを示します。</p>
+    </section>
+
+    <section class="real-tensor" id="actual" aria-labelledby="actualTitle">
+      <div class="section-heading"><span class="mini-num">00 — 03</span><div><h2 id="actualTitle">本当に計算したテンソルを覗く。</h2><p>イラストと実際の計算値の違いを、同じセルフィー画像で確認します。</p></div></div>
+      <div class="truth-grid">
+        <div class="truth-summary"><span class="truth-badge">実PyTorchのforward値 / 未学習</span><h3>Backbone → PAFPNの中身</h3><p>既存Unit 03-B・03-Cで取得した実テンソルから、各1チャネルの数値を抜き出して表示します。<strong>学習済み頭部特徴ではありません。</strong></p><p>未学習の固定seed重みを使ったため、特定の色や模様を「目」「鼻」などの意味と結びつけないでください。</p><div class="truth-provenance"><span>入力画像 960×640</span><span>モデル入力 416×416</span><span>重み 未学習</span><span>seed 20261104</span></div></div>
+        <div class="truth-map-area"><div class="trace-toolbar"><label for="traceStage">観察する中間層</label><select id="traceStage"><option value="dark2">Backbone dark2</option><option value="dark3">Backbone dark3</option><option value="p3">PAFPN P3</option></select></div>
+          <div class="truth-map-visual"><canvas id="traceCanvas" width="416" height="416" role="img" aria-label="未学習モデルから取得した実際の特徴マップ1チャネル。色は正負と相対的な大きさを示す"></canvas><div class="truth-map-placeholder" id="tracePlaceholder" role="status">「実PyTorch値を表示」を押すと、公開済みの実数値だけを読み込みます。</div></div>
+          <div class="trace-foot"><span id="traceShape">—</span><span id="traceValue">—</span></div><button class="btn outline" type="button" id="loadTrace">実PyTorch値を表示</button>
+        </div>
+      </div>
+      <p class="trace-details">各マップの色は表示のためチャネル内の絶対値で規格化し、オレンジは正、青は負を示します。表示している値は元テンソルの一部を<strong>座標間引きで抽出</strong>したものです（補間・平均化なし）。詳しいチャネル・層の比較は <a href="../03-nano/index.html">Unit 03-B</a> と <a href="../03-fpn-head/index.html">Unit 03-C</a> で確認できます。</p>
+    </section>
+
+    <section class="glossary" id="terms">
+      <div class="section-heading"><span class="mini-num">00 — 04</span><div><h2>知らなくてよい。必要なときに開けばよい。</h2><p>この章で出てきた言葉を、ひとことで確認できます。</p></div></div>
+      <div class="glossary-grid">
+        <details><summary>RGB</summary><p>赤・緑・青の3つの数値で色を表す方法。YOLOXは通常3チャネルの画像を受け取ります。</p></details>
+        <details><summary>Pixel（画素）</summary><p>画像の1つの位置。例えば横48×縦32の画像には1536個の画素位置があります。</p></details>
+        <details><summary>Kernel（カーネル）</summary><p>小さな領域に重ねて計算する重みの集まり。3×3なら9か所の数値を参照します。RGB入力の通常のConvでは各入力チャネル分の重みがあります。</p></details>
+        <details><summary>Convolution（畳み込み）</summary><p>画像の小領域に重みを掛けて足し、新しい数値を得る計算。各位置に繰り返すと特徴マップになります。</p></details>
+        <details><summary>Feature Map（特徴マップ）</summary><p>各計算位置の出力値を格子状に並べたもの。モデル内には複数のチャネルが存在します。</p></details>
+        <details><summary>Stride（ストライド）</summary><p>計算位置を何マスずつ移動するか。Stride 2は2マスずつ移動し、通常、出力の縦横サイズが小さくなります。</p></details>
+        <details><summary>Backbone（バックボーン）</summary><p>画像から段階的に特徴を計算する部分。YOLOX-NanoではCSPDarknet系の構造を使います。</p></details>
+        <details><summary>PAFPN</summary><p>異なる解像度の特徴を上下方向に融合する仕組み。小さな対象と大きな対象の予測に必要な情報を組み合わせます。</p></details>
+        <details><summary>Head（ヘッド）</summary><p>特徴から予測値を生成する部分。位置・物体らしさ・クラスの値を出します。</p></details>
+        <details><summary>BBox（バウンディングボックス）</summary><p>検出した対象を囲む四角形。位置と幅・高さを数値で表します。</p></details>
+        <details><summary>Objectness</summary><p>候補位置に物体があるらしさを表す値。何のクラスかを推定する分類とは別の出力です。</p></details>
+        <details><summary>NMS</summary><p>同じ対象に対して重複した候補BBoxを整理し、代表的な候補を残す後処理です。</p></details>
+      </div>
+    </section>
+    <section class="finish">
+      <div><span class="mini-num">NEXT / UNIT 01</span><h2>全体が見えたら、<br>最初の計算を触ってみよう。</h2><p>次はRGBを数値として読み、3×3のKernelで1つの特徴値を計算します。何のための演算なのか、もう迷わずに始められます。</p></div>
+      <a class="btn primary" href="../01-cnn/index.html">Unit 01：畳み込みの実験へ <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+  <footer class="foot"><span>YOLOX Visual Academy · Unit 00 / v0.7</span><span>模式図・未学習トレース・実学習結果を区別して表示</span><a href="../../index.html">全ユニットへ戻る</a></footer>
+</body>
+</html>

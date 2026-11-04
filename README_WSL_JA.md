@@ -1,4 +1,4 @@
-# YOLOX Visual Academy v0.6 — WSLで開発・確認する
+# YOLOX Visual Academy v0.7 — WSLで開発・確認する
 
 本リポジトリは既に `tattoqq9/yolox-visual-academy` としてGitHubに公開済みです。
 **過去の新規リポジトリ作成スクリプトを再実行する必要はありません。**
@@ -31,6 +31,7 @@ python3 scripts/verify_live.py \
 
 ## 各章の学習先
 
+- Unit00：`site/lab/00-overview/index.html`（全体図・用語・未学習実テンソル）
 - Unit01：`site/lab/01-cnn/index.html`
 - Unit02：`site/lab/02-grid/index.html`
 - Unit03-A：`site/lab/03-block/index.html`
@@ -50,6 +51,8 @@ COCO形式の非公開検証は `tools/unit06/dataset_contract.py` を参照。�
 ## 関連資料
 
 - `ROADMAP.md`：現状と今後
+- `UNIT00_README_JA.md`：第0章・出所区分・再生成方法
+- `RELEASE_NOTES_v0.7.md`：導入改訂の内容と検証
 - `UNIT06_README_JA.md`：Unit06検証
 - `tools/unit06/DATASET_CONTRACT_JA.md`：正式画像・GTの受入仕様
 - `RELEASE_NOTES_v0.6.md`：今回の差分と実証範囲

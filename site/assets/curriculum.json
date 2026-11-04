@@ -1,8 +1,23 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.6.0-unit06-prototype",
+  "version": "0.7.0-unit00-and-unit01-onboarding",
   "locale": "ja-JP",
   "units": [
+    {
+      "id": "00-overview",
+      "title": "AIはどうやって頭を見つけるのか？",
+      "status": "prototype-ready",
+      "chapters": [
+        "画像分類と物体検出の違い",
+        "RGB・Kernel・特徴マップ",
+        "Backbone・PAFPN",
+        "Head・BBox・NMS",
+        "実PyTorchトレースと模式図の区別"
+      ],
+      "textbook": "learn/00-overview.html",
+      "lab": "lab/00-overview/index.html",
+      "note": "概念BBoxは手描きの説明用。実PyTorch特徴は固定seed未学習重みのサンプルで、頭部検出性能の証拠ではありません。"
+    },
     {
       "id": "01-cnn",
       "title": "画像から特徴マップへ",

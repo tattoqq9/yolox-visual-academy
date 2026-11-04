@@ -27,6 +27,11 @@ jobs:
         run: python3 scripts/check_site.py site
       - name: Validate Unit 03 computations and site contract
         run: python3 -m unittest discover -s tests -v
+      - name: Validate Unit 00 onboarding and real untrained trace
+        run: |
+          python3 -m unittest tests.test_unit00_onboarding -v
+          node --check site/lab/00-overview/app.js
+          node --check site/lab/01-cnn/app.js
       - name: Check JavaScript syntax
         run: node --check site/lab/03-block/app.js
       - name: Check Unit 03-B JavaScript syntax

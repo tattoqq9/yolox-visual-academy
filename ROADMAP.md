@@ -1,7 +1,8 @@
 # YOLOX Visual Academy — Roadmap
 
-## Status: 2026-11-05
+## Status: 2026-11-05 / v0.7 onboarding
 
+- **Unit 00** Interactive overview of classification vs detection and RGB → Conv → Backbone → PAFPN → Head → BBox; first-class glossary; only genuinely untrained PyTorch forward data marked as such — published prototype.
 - **Unit 01** RGB → Convolution → feature maps — published prototype.
 - **Unit 02** Stride → receptive field → grids — published prototype.
 - **Unit 03-A** Conv → BatchNorm → SiLU → introductory CSP — published prototype.
@@ -10,7 +11,10 @@
 - **Unit 04** BBox Decode, IoU, NMS, SimOTA, Loss & gradients — published educational prototype.
 - **Unit 05** One-class YOLOX-Nano, actual CPU training on 1/8 procedurally generated rectangle images, separate validation images, AP50, checkpoint restoration, interactive browser trace — reconstructed v0.5 prototype; public post-deploy GUI review pending.
 - **Unit 06** Synthetic tiny-BBox geometry, score/assignment diagnostics, signed LTRB ideation, validation-only COCO importer — prototype implemented; post-deploy GUI review pending.
-- **v1.0 planned** Beginner QA, narrated YouTube series, license provenance and accessibility audit. **After course completion:** user-provided formal images and labels reviewed, converted and integrated only with explicit rights approval.
+- **v0.7.1 planned** Further beginner review of Unit00/Unit01 terminology and clarity.
+- **v0.8 planned** Reproducible learned-model trace, only from independently authorized read-only snapshot; do not pretend untrained activations are learned.
+- **v0.9 planned** Global flow navigation that connects every unit to the same pipeline.
+- **v1.0 planned** Beginner QA, narrated YouTube series, license provenance and accessibility audit. **After course completion (v1.1):** user-provided formal images and labels reviewed, converted and integrated only with explicit rights approval.
 
 ## Scientific gates
 

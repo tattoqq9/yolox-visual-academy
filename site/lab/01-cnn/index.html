@@ -25,6 +25,11 @@
       <div class="hero-art" aria-hidden="true"><div class="art-photo"><img src="../../assets/003Z-selfie.png" alt=""></div><div class="art-grid"></div><div class="art-chip art-chip-top">RGB <b>→</b> 数値</div><div class="art-chip art-chip-bottom">3×3 Kernel <b>→</b> 特徴量</div></div>
     </section>
 
+    <section class="unit01-orientation" aria-label="まず全体の流れを理解">
+      <div class="orientation-top"><div><span class="orientation-label">BEFORE THE CALCULATION / まず全体像</span><h2>このUnitで学ぶのは、<strong>特徴を抽出する最初の計算</strong>です。</h2><p>画像からBBoxまでの全体の流れのうち、今回は「入力画像を計算して特徴マップに変える」部分に注目します。</p></div><a class="orientation-overview" href="../00-overview/index.html">Unit 00：全体図を見る →</a></div>
+      <div class="orientation-steps"><span><b>① 画像（RGB）</b><small>色が数値になっている</small></span><i aria-hidden="true">→</i><span><b>② 小さな重み（Kernel）</b><small>3×3の場所を参照する</small></span><i aria-hidden="true">→</i><span><b>③ 特徴マップ</b><small>計算結果を並べる</small></span><i aria-hidden="true">→</i><span><b>④ 次の層</b><small>別の特徴を作る</small></span></div>
+      <p class="orientation-foot">Kernel（カーネル）＝入力の小領域に掛ける<strong>重みの集まり</strong>。現段階では「9個の重みを使う計算道具」と考えてください。<a href="../00-overview/index.html#terms">ほかの用語を見る</a></p>
+    </section>
     <div class="public-notice" role="note">初期画像に<strong>「セルフィー（写真）」</strong>を使用しています。合成サンプル画像にも切り替えられます。<strong>「＋ 自分の画像を使う」</strong>から任意の写真を選べます。画像はブラウザ内だけで処理し、送信しません。</div>
     <section class="workspace" aria-label="CNN体験シミュレータ">
       <div class="workspace-head">
@@ -49,12 +54,12 @@
       </div>
 
       <div class="lesson-header"><div class="lesson-kicker" id="lessonKicker">LESSON 01 — THE INPUT</div><h2 id="lessonTitle">画像は、数字の集まり。</h2><p id="lessonLead">どんな画像も、CNNへ入る前はピクセルごとの数値に変わります。</p></div>
-      <div class="storyline" id="storyline"><div class="story-label"><span class="pulse-dot"></span> いま理解すること</div><p id="storyText">写真の好きな場所をクリックしてみてください。その位置の RGB と明るさを表示します。</p><div class="story-dots" id="storyDots"></div><div class="guide-mini-controls"><button type="button" id="storyPrev" title="前の説明へ" aria-label="前の説明へ">◀</button><button type="button" id="storyNext" title="次の説明へ" aria-label="次の説明へ">▶</button><select id="guideSpeed" title="自動解説の再生速度" aria-label="再生速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div></div>
+      <div class="storyline" id="storyline"><div class="story-label"><span class="pulse-dot"></span> いま理解すること</div><p id="storyText">写真の好きな場所をクリックしてみてください。その位置のRGBとグレー値（RGBから作る1つの数値）を表示します。</p><div class="story-dots" id="storyDots"></div><div class="guide-mini-controls"><button type="button" id="storyPrev" title="前の説明へ" aria-label="前の説明へ">◀</button><button type="button" id="storyNext" title="次の説明へ" aria-label="次の説明へ">▶</button><select id="guideSpeed" title="自動解説の再生速度" aria-label="再生速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div></div>
 
       <section class="lab-grid">
         <div class="visual-column">
           <div class="visual-panel">
-            <div class="panel-heading"><div><span class="panel-index">A</span><strong id="primaryTitle">入力画像（原画像）</strong></div><span class="panel-meta" id="primaryMeta">48 × 32の学習用サンプルへ変換</span></div>
+            <div class="panel-heading"><div><span class="panel-index">A</span><strong id="primaryTitle">入力画像（原画像）</strong></div><span class="panel-meta" id="primaryMeta">計算に使う48×32画像を作ります</span></div>
             <div class="photo-canvas-wrap"><canvas id="photoCanvas" width="768" height="512" aria-label="入力画像。クリックでピクセルや畳み込み位置を選択"></canvas><div class="canvas-float"><span class="key-square"></span><span id="overlayLegend">選択中のピクセル</span></div></div>
             <div class="photo-foot"><label class="toggle"><input type="checkbox" id="gridToggle" checked><span>格子を重ねる</span></label><span id="cursorLabel">位置 (23, 12)</span><span class="muted-small">画像をクリックして調べる</span></div>
           </div>
@@ -81,6 +86,6 @@
     <footer class="site-footer"><a href="../../learn/01-cnn.html">対応する教科書を読む ↗</a><span>YOLOX Visual Lab — Unit 01</span><span>教育用の小規模CNNです。YOLOX本体の学習済み重み・内部特徴マップとは異なります。</span></footer>
   </main>
 </div>
-<script src="app.js?v=20261104-selfie-default"></script>
+<script src="app.js?v=20261105-unit00-bridge"></script>
 </body>
 </html>

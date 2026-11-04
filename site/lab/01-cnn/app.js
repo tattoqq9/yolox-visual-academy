@@ -24,7 +24,7 @@
       'オレンジの枠が3×3の参照領域です。選んだ出力位置に対応する9個の入力値を使います。',
       'Kernelは9個の重みです。位置の対応する「画素値 × 重み」を1組ずつ計算します。',
       '9個の積を合計すると1個の出力値になります。負の結果もそのまま残ります。',
-      'RGBなら3チャネル×9＝27個の積を足します。出力はそれでも1つの値です。'
+      'RGBなら3チャネル×9＝27個の積を足します。出力はそれでも1つの値です。この画面のRGB重みはグレー変換を再現する教材専用の例です。'
     ]},
     {kicker:'LESSON 03 — FEATURE MAP',title:'同じ計算を、画像全体へ。',lead:'Kernelを1マスずつ動かし、出力値を並べたものが特徴マップです。',insight:'出力の1マスは「入力画像をそこだけ独立に切り出したもの」ではありません。隣接する3×3の参照領域は大きく重なります。',stories:[
       'ある位置で1つの出力値ができたら、Kernelを右へ移動します。',
@@ -238,11 +238,12 @@
     const full=list.reduce((a,t)=>a+t.product,0);
     const currentChannel=state.channelMode==='rgb'?term.channel:3;
     return `<span class="eyeline">1つの出力値を計算</span><h3>「入力 × 重み」を順番に足す</h3>
-      <p>画像をクリックして計算位置を選択。まずは9項だけを確認し、次にRGBの27項へ進んでください。</p>
+      <p><strong>Kernel（カーネル）</strong>は、小さな領域の数値に掛ける重みの集まりです。3×3なら9か所。画像をクリックして計算位置を選び、まずはグレー値で9項の計算を確認します。</p>
+      <p class="clear-note">次にRGB 27項へ進みましょう。この教材のRGBモードはグレー値と等価になるよう係数を固定した例です。一般の学習済みConv2dの重みがこの値という意味ではありません。</p>
       <div class="control-row"><label for="filterSel">Kernel</label><select id="filterSel" class="select" data-role="filter">${Object.keys(FILTERS).map(k=>`<option value="${k}" ${k===state.filter?'selected':''}>${FILTERS[k].name}</option>`).join('')}</select></div>
-      <div class="control-row"><button class="tool-btn ${state.channelMode==='gray'?'active':''}" data-action="gray">明るさ1チャネル（9項）</button><button class="tool-btn ${state.channelMode==='rgb'?'active':''}" data-action="rgb">RGB 3チャネル（27項）</button></div>
-      ${state.channelMode==='rgb'?`<p class="card-subtitle">今の計算チャネル：${['R（赤）','G（緑）','B（青）'][currentChannel]}　× ${fmt(CH[currentChannel])}（明るさへの寄与）</p>`:''}
-      <div class="matrix-wrap"><div class="matrix-col"><div class="mini-heading">入力：${state.channelMode==='rgb'?['R','G','B'][currentChannel]:'明るさ'}（0〜255で表示）</div>${matrixFor(currentChannel===3?'gray':String(currentChannel))}</div><div class="matrix-col"><div class="mini-heading">3×3 Kernel（重み）</div>${matrixFor('gray',true)}</div></div>
+      <div class="control-row"><button class="tool-btn ${state.channelMode==='gray'?'active':''}" data-action="gray">グレー値1チャネル（9項）</button><button class="tool-btn ${state.channelMode==='rgb'?'active':''}" data-action="rgb">RGB 3チャネル（27項）</button></div>
+      ${state.channelMode==='rgb'?`<p class="card-subtitle">今の計算チャネル：${['R（赤）','G（緑）','B（青）'][currentChannel]}　× ${fmt(CH[currentChannel])}（グレー値への寄与。教材用の固定係数）</p>`:''}
+      <div class="matrix-wrap"><div class="matrix-col"><div class="mini-heading">入力：${state.channelMode==='rgb'?['R','G','B'][currentChannel]:'グレー値'}（0〜255で表示）</div>${matrixFor(currentChannel===3?'gray':String(currentChannel))}</div><div class="matrix-col"><div class="mini-heading">3×3 Kernel（重み）</div>${matrixFor('gray',true)}</div></div>
       <div class="math-status"><div><small>ここまでの積の合計（${state.term} / ${max}項）</small><div class="math-number">${fmt(sum,5)}</div></div><div><small>全${max}項の最終結果</small><div class="math-number">${fmt(full,5)}</div></div></div>
       <div class="formula">${fmt(term.inValue,4)} × ${fmt(term.w,4)} = ${fmt(term.product,5)}</div>
       <div class="control-row"><button class="tool-btn" data-action="term-prev" ${state.term<=0?'disabled':''}>← 戻す</button><button class="tool-btn emphasis" data-action="term-next" ${state.term>=max?'disabled':''}>次の積を足す →</button><button class="tool-btn" data-action="term-reset">やり直す</button></div>
@@ -255,10 +256,11 @@
         const rgb=rgbAt(state.x,state.y),lum=data.gray[state.y*W+state.x];
         html=`<span class="eyeline">画像 = 高さ × 幅 × チャネル</span><h3>この1マスには、3つの数字がある</h3>
         <p>左の写真をクリックすると、対応するサンプル位置を調べられます。今は画像を<strong>48×32</strong>へ縮小して計算しています。</p>
-        <div class="readout-row"><div class="readout-tile"><b style="color:#c94e49">${R(rgb[0])}</b><small>R・赤</small></div><div class="readout-tile"><b style="color:#289d6e">${R(rgb[1])}</b><small>G・緑</small></div><div class="readout-tile"><b style="color:#4575bd">${R(rgb[2])}</b><small>B・青</small></div><div class="readout-tile"><b>${R(lum)}</b><small>明るさ</small></div></div>
-        <div class="mini-heading">明るさの計算（この位置）</div><div class="formula">0.299 × ${R(rgb[0])} + 0.587 × ${R(rgb[1])} + 0.114 × ${R(rgb[2])} ≈ ${R(lum)}</div>
+        <div class="readout-row"><div class="readout-tile"><b style="color:#c94e49">${R(rgb[0])}</b><small>R・赤</small></div><div class="readout-tile"><b style="color:#289d6e">${R(rgb[1])}</b><small>G・緑</small></div><div class="readout-tile"><b style="color:#4575bd">${R(rgb[2])}</b><small>B・青</small></div><div class="readout-tile"><b>${R(lum)}</b><small>グレー値</small></div></div>
+        <div class="mini-heading">グレー値の計算（この位置・RGBの重み付き和）</div><div class="formula">0.299 × ${R(rgb[0])} + 0.587 × ${R(rgb[1])} + 0.114 × ${R(rgb[2])} ≈ ${R(lum)}</div>
         <div class="tag-row"><span class="mini-tag">入力：RGB / 3チャネル</span><span class="mini-tag">学習サンプル：48×32</span><span class="mini-tag">値の範囲：0〜255</span></div>
-        <p class="clear-note">画像を縮小すると細かい情報は失われます。ここではCNNの計算を追いやすくするため、意図的に小さくしています。</p>`;break;
+        <p class="clear-note"><strong>グレー値とは？</strong> 赤・緑・青を1つの数値へまとめた近似的な値です。赤0・緑0・青0は黒、255・255・255は白。Gが大きいほど寄与が大きい式を使います。<strong>実際のYOLOXは通常RGBの3チャネルを使う</strong>ので、グレー化は9項の計算を見やすくする教材上の補助です。</p>
+        <p class="clear-note">写真を48列×32行（1536画素）へ縮小すると細部が失われます。これは<strong>畳み込みそのものではなく、前段の画像リサイズ</strong>です。下の3段階で「何を拡大しているのか」を見てください。</p>`;break;
       }
       case 1:html=convCard();break;
       case 2:{
@@ -307,8 +309,21 @@
   function renderExtra(){
     $('#extraSection').hidden=![0,3,4].includes(state.step);
     if(state.step===0){
-      $('#extraContent').innerHTML=`<div class="panel-heading"><div><span class="panel-index">B</span><strong>縮小後の48×32サンプルを拡大表示</strong></div><span class="panel-meta">本当に計算へ入る画像です</span></div><div class="map-canvas-outer"><canvas id="sampleCanvas" width="672" height="448" aria-label="48×32に縮小された入力画像"></canvas></div><p class="math-detail">元画像のピクセルをそのまま48×32に切り分けたのではなく、縮小時に補間（リサンプリング）しています。各マスにRGBの値があります。</p>`;
+      $('#extraContent').innerHTML=`<div class="panel-heading"><div><span class="panel-index">B</span><strong>何を48×32にし、何を拡大しているの？</strong></div><span class="panel-meta">実際の計算入力を見比べます</span></div>
+        <div class="sample-compare">
+          <div class="sample-compare-card"><b>① 元の写真</b><div class="sample-image-frame"><canvas id="originalSample" width="336" height="224" aria-label="元画像を縮小せずに縮尺表示"></canvas></div><small>人物や背景の細部が見える写真</small></div>
+          <div class="sample-compare-card"><b>② 計算用の48×32</b><div class="sample-image-frame"><canvas id="sampleCanvas" width="48" height="32" aria-label="実際に畳み込みに入力される48列32行の画像"></canvas></div><small>元の写真から48列×32行にリサイズした小画像。1536個の位置にRGB値があります。</small></div>
+          <div class="sample-compare-card"><b>③ その一部分を拡大</b><div class="sample-image-frame"><canvas id="zoomSample" width="216" height="168" aria-label="選択中の画素の周り9列7行を一画素ずつ拡大"></canvas></div><small>選択座標 (${state.x}, ${state.y}) を中心に9×7画素を拡大。1マスは1画素で、情報が増えたわけではありません。</small></div>
+        </div>
+        <p class="math-detail">「48×32」は<strong>横48列・縦32行の画素数</strong>です。元画像を48×32の小画像へリサンプリングした後、<strong>見やすく大きく描画</strong>しています。大きく表示しても、元画像の細部は復元されません。これはYOLOXの標準入力サイズでも、畳み込みの出力サイズでもありません。</p>`;
+      const original = $('#originalSample'), octx = original.getContext('2d');
+      octx.drawImage(data.source,0,0,original.width,original.height);
       const c=$('#sampleCanvas'),ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.drawImage(off,0,0,c.width,c.height);
+      const z=$('#zoomSample'),zc=z.getContext('2d');zc.imageSmoothingEnabled=false;
+      const zx=clamp(state.x-4,0,W-9),zy=clamp(state.y-3,0,H-7);
+      zc.drawImage(off,zx,zy,9,7,0,0,z.width,z.height);
+      zc.strokeStyle='#ffcf6d';zc.lineWidth=4;
+      zc.strokeRect((state.x-zx)*z.width/9+2,(state.y-zy)*z.height/7+2,z.width/9-4,z.height/7-4);
       return;
     }
     if(state.step===3){
@@ -319,7 +334,7 @@
       return;
     }
     if(state.step===4){
-      $('#extraContent').innerHTML=`<div class="panel-heading"><div><span class="panel-index">C</span><strong>特徴の流れを立体表示</strong></div><span class="panel-meta">各板の画素は実計算した特徴値</span></div><div class="viz3d-wrap"><canvas id="sceneCanvas" width="930" height="325" aria-label="入力画像から3つの特徴チャネルを通り2つの次層の特徴へ伝播する図"></canvas></div><div class="three-labels"><div>入力 RGB<small>48×32×3（色で表示）</small></div><div>1層目<small>48×32×3（特徴）</small></div><div>2層目<small>${data.stage2W}×${data.stage2H}×2（特徴）</small></div></div><p class="math-detail">この3D図はテンソルの見せ方です。RGBを明るさ1チャネルに変換してから3種類の固定Kernelを適用しています（明るさ変換の中間表示は省略）。板の奥行きを物理空間の座標と誤解しないでください。2層目は各出力で全3特徴チャネルの重み付き和を計算しています。</p>`;
+      $('#extraContent').innerHTML=`<div class="panel-heading"><div><span class="panel-index">C</span><strong>特徴の流れを立体表示</strong></div><span class="panel-meta">各板の画素は実計算した特徴値</span></div><div class="viz3d-wrap"><canvas id="sceneCanvas" width="930" height="325" aria-label="入力画像から3つの特徴チャネルを通り2つの次層の特徴へ伝播する図"></canvas></div><div class="three-labels"><div>入力 RGB<small>48×32×3（色で表示）</small></div><div>1層目<small>48×32×3（特徴）</small></div><div>2層目<small>${data.stage2W}×${data.stage2H}×2（特徴）</small></div></div><p class="math-detail">この3D図はテンソルの見せ方です。RGBをグレー値1チャネルに変換してから3種類の固定Kernelを適用しています（明るさ変換の中間表示は省略）。板の奥行きを物理空間の座標と誤解しないでください。2層目は各出力で全3特徴チャネルの重み付き和を計算しています。</p>`;
       drawScene();return;
     }
   }
