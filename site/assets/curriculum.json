@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.2.0-prepublish",
+  "version": "0.3.0-unit03a",
   "locale": "ja-JP",
   "units": [
     {
@@ -37,8 +37,11 @@
     },
     {
       "id": "03-yolox",
-      "title": "YOLOX内部構造",
-      "status": "planned"
+      "title": "CNN Block: Conv・BN・SiLU・CSPの考え方",
+      "status": "prototype-ready",
+      "textbook": "learn/03-block.html",
+      "lab": "lab/03-block/index.html",
+      "starter": "downloads/unit03_numpy_starter.zip"
     },
     {
       "id": "04-bbox",

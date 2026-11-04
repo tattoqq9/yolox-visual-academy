@@ -25,6 +25,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Check static site
         run: python3 scripts/check_site.py site
+      - name: Validate Unit 03 computations and site contract
+        run: python3 -m unittest discover -s tests -v
+      - name: Check JavaScript syntax
+        run: node --check site/lab/03-block/app.js
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static files
