@@ -6,7 +6,8 @@
 - **Unit 02**: stride → receptive field → feature map grid → geometric assignment candidates — published prototype
 - **Unit 03-A**: Conv → BatchNorm → SiLU → simplified CSP — published prototype, learner review pending
 - **Unit 03-B**: official YOLOX-Nano inference topology, Focus/DWConv/CSPLayer, parameter counts and **real PyTorch tensor data from seeded random weights** — published prototype, learner review pending
-- **Unit 03-C (next)**: YOLOPAFPN and Decoupled Head; full multiscale tensor flow, output labels
+- **Unit 03-C**: YOLOPAFPN / Decoupled Head、38ノードの未学習PyTorch tensor・格子の実値とPyTorch演習 — 公開プロトタイプ（初学者レビュー未実施）
+- **Unit 04 (next)**: BBox Decode / NMS / SimOTA / Loss & gradients
 - Unit 04: BBox decode / SimOTA / loss and gradients
 - Unit 05: YOLOX-Nano scratch implementation and evaluation
 - Unit 06: tiny heads and signed LTRB design research

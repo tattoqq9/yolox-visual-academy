@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.3.1-unit03b",
+  "version": "0.3.2-unit03c",
   "locale": "ja-JP",
   "units": [
     {
@@ -58,6 +58,22 @@
       "lab": "lab/03-nano/index.html",
       "starter": "downloads/unit03b_pytorch_starter.zip",
       "note": "公開traceは固定seedの未学習重み"
+    },
+    {
+      "id": "03-fpn-head",
+      "title": "PAFPNとDecoupled Head：実テンソルで理解",
+      "status": "prototype-ready",
+      "chapters": [
+        "Top-downのUpsample・Concat",
+        "Bottom-upの経路統合",
+        "Headの分類・回帰枝",
+        "raw85値と3,549格子",
+        "PyTorchスクラッチ接続"
+      ],
+      "textbook": "learn/03-fpn-head.html",
+      "lab": "lab/03-fpn-head/index.html",
+      "starter": "downloads/unit03c_pytorch_starter.zip",
+      "note": "固定seedの未学習PyTorch重みでforwardした観察データ"
     },
     {
       "id": "04-bbox",

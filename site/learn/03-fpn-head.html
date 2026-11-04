@@ -1,0 +1,84 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="YOLOX-Nanoの実際のPAFPN、Top-down・Bottom-up、Decoupled Headを式・数値・PyTorch実装で理解する教科書"><title>Unit 03-C 教科書｜PAFPN・Decoupled Head ― YOLOX Visual Academy</title><link rel="stylesheet" href="../assets/site.css"><style>
+.lesson-hero{padding:48px 0 32px;border-bottom:1px solid #d5e3da}.lesson-hero .tag{font-weight:850;letter-spacing:.14em;font-size:11px;color:#177461}.lesson-hero h1{font-size:clamp(30px,4.5vw,49px);letter-spacing:-.045em;line-height:1.28;margin:11px 0}.lesson-hero p{max-width:780px;color:#577064;font-size:16px;line-height:1.95}.layout03{display:grid;grid-template-columns:230px minmax(0,800px);gap:37px;padding:35px 0 80px}.toc03{position:sticky;top:100px;align-self:start;padding:19px;background:white;border:1px solid #d6e5db;border-radius:13px}.toc03 strong{font-size:12px;color:#1d6657}.toc03 a{display:block;text-decoration:none;font-size:12px;padding:7px 0;color:#35594b}.article03{min-width:0}.article03 section{padding:0 0 34px;margin-bottom:34px;border-bottom:1px solid #dce5df;scroll-margin-top:100px}.article03 h2{font-size:clamp(24px,3vw,31px);margin:0 0 17px;letter-spacing:-.04em}.article03 h3{font-size:19px;margin:22px 0 8px}.article03 p,.article03 li{line-height:2;font-size:15px}.article03 li{margin:7px 0}.article03 pre{background:#172f2a;color:#e5f9eb;padding:17px;border-radius:10px;overflow:auto;font-size:12px;line-height:1.75}.article03 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em}.formula03{background:#eaf4ed;border-left:4px solid #338b6f;padding:14px 18px;border-radius:9px;margin:17px 0;font:13px/2 ui-monospace,Consolas,monospace;white-space:pre-wrap}.notice03{background:#fff4df;border-left:4px solid #cea057;color:#725e43;padding:14px 18px;font-size:13px;line-height:1.9;border-radius:8px}.example03{background:#fff;padding:15px 20px;border:1px solid #d2e4d7;border-radius:11px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:19px 0}.example03 a{font-size:13px;font-weight:750;white-space:nowrap}table.data03{font-size:13px;width:100%;border-collapse:collapse;background:white}table.data03 th,table.data03 td{border-bottom:1px solid #dfe8e0;padding:8px 10px;text-align:left}table.data03 th{background:#edf5ef}table.data03 td code{white-space:nowrap}.footer03{font-size:13px;color:#5d7b6e}.footer03 a{margin-right:16px}@media(max-width:850px){.layout03{grid-template-columns:1fr}.toc03{position:static}.toc03 a{display:inline-block;margin-right:11px}.example03{align-items:flex-start;flex-direction:column}.example03 a{white-space:normal}}
+</style></head><body><header class="site-header"><div class="wrap head-row"><a class="brand" href="../index.html">YOLOX Visual Academy</a><a href="../lab/03-fpn-head/index.html">実験室を開く ↗</a></div></header>
+<section class="lesson-hero"><div class="wrap"><div class="tag">UNIT 03-C / ONLINE TEXTBOOK</div><h1>Backboneから、<br>BBox・Objectness・分類へ。</h1><p>Unit 03-Bで学んだCSPDarknetの3つの特徴テンソルを、YOLOPAFPNで上下に流し、Decoupled Headで85値に変換するまでを追跡します。図や数式は同じ公開トレースの数値と結び付いています。</p><a href="../lab/03-fpn-head/index.html" class="btn primary">対応する数値シミュレータ →</a></div></section>
+<div class="wrap layout03"><aside class="toc03"><strong>学習目次</strong><a href="#backbone">01 PAFPNが必要な理由</a><a href="#topdown">02 Top-down / FPN</a><a href="#bottomup">03 Bottom-up / PAN</a><a href="#head">04 Decoupled Head</a><a href="#raw">05 rawとDecodeの区別</a><a href="#tensor">06 実テンソルの読み方</a><a href="#practice">07 PyTorchで実装</a><a href="#questions">理解確認・参考文献</a></aside>
+<article class="article03">
+<section id="backbone"><h2>01. なぜBackboneの後にPAFPNが必要なのか</h2><p>物体検出では、小さな対象の位置を調べるために高解像度特徴が役立つ一方、深いネットワークで得られる広い受容野や抽象的特徴も利用したい。そこでYOLOXは、Backboneの複数スケールの特徴をPAFPNで統合します。</p><p>YOLOX-Nano（幅倍率0.25・入力416×416）のBackbone出力は以下の通りです。表記はPyTorchの <code>[N,C,H,W]</code> です。</p>
+<table class="data03"><thead><tr><th>入力特徴</th><th>Shape</th><th>累積Stride</th></tr></thead><tbody><tr><td>dark3</td><td><code>[1,64,52,52]</code></td><td>8</td></tr><tr><td>dark4</td><td><code>[1,128,26,26]</code></td><td>16</td></tr><tr><td>dark5</td><td><code>[1,256,13,13]</code></td><td>32</td></tr></tbody></table>
+<p>ここで重要なのは、<b>「各特徴マップは、入力画像を単純に独立タイルへ分割したものではない」</b>という点です。各セルは周囲の画素から計算された値であり、受容野・格子の違いはUnit 02で詳しく扱いました。</p><div class="example03"><div><b>実験：dark3・dark4・dark5を見比べる</b><p>まずUnit 03-Bで、特徴の数値が本当に変化することを確認してください。</p></div><a href="../lab/03-nano/index.html">Unit 03-Bに戻る →</a></div></section>
+<section id="topdown"><h2>02. Top-down：小さい特徴を拡大して結合</h2><p>高解像度のP3を得るため、dark5から順にUpsample（最近傍補間）とConcat（チャネル連結）を行います。以下はNano構成での正確な途中Shapeです。</p>
+<table class="data03"><thead><tr><th>演算</th><th>入力</th><th>出力</th></tr></thead><tbody>
+<tr><td><code>lateral_conv0</code></td><td>dark5 = 256×13×13</td><td>128×13×13</td></tr>
+<tr><td><code>Upsample ×2</code></td><td>128×13×13</td><td>128×26×26</td></tr>
+<tr><td><code>Concat dark4</code></td><td>128 + 128ch</td><td>256×26×26</td></tr>
+<tr><td><code>C3_p4</code></td><td>256×26×26</td><td>128×26×26</td></tr>
+<tr><td><code>reduce_conv1</code></td><td>128×26×26</td><td>64×26×26</td></tr>
+<tr><td><code>Upsample ×2</code></td><td>64×26×26</td><td>64×52×52</td></tr>
+<tr><td><code>Concat dark3</code></td><td>64 + 64ch</td><td>128×52×52</td></tr>
+<tr><td><code>C3_p3</code></td><td>128×52×52</td><td>**P3: 64×52×52**</td></tr>
+</tbody></table>
+<h3>Upsampleの計算</h3><div class="formula03">y[c, 2i + a, 2j + b] = x[c, i, j]
+for a,b ∈ {0,1}
+<br>※ 高さ・幅2倍、チャネル数不変、学習パラメータ0</div>
+<p>Nearest-neighborでは入力1セルの値が出力の2×2マスへ複製されます。補間は、新しい意味を学習する演算ではありません。数値を実験室の「up0」「up1」ノードで比較できます。</p>
+<h3>Concatの計算</h3><div class="formula03">z = torch.cat([a, b], dim=1)
+a: [1,128,26,26]
+b: [1,128,26,26]
+z: [1,256,26,26]
+<br>※ z[:,0:128] = a / z[:,128:256] = b</div>
+<p>Concatは加算ではなく「チャネルを並べる」演算です。したがって同じH×Wが必要です。値がどちらの入力から来たか、結合境界のチャネル127と128を選んで確認してください。</p>
+<div class="example03"><div><b>実験：Up0とCat0の数値の出所を確認</b><p>ソースのチャネルと出力のチャネルで同じ位置の値が一致します。</p></div><a href="../lab/03-fpn-head/index.html">FPNを操作する →</a></div></section>
+<section id="bottomup"><h2>03. Bottom-up：高解像度からもう一度戻る</h2><p>Top-downのP3を得ただけでは終了しません。YOLOPAFPNはP3から再び低解像度側へ進み、中間特徴と連結するBottom-up経路を持ちます。</p>
+<table class="data03"><thead><tr><th>演算</th><th>入力</th><th>出力</th></tr></thead><tbody>
+<tr><td><code>bu_conv2</code></td><td>P3 64×52×52</td><td>64×26×26</td></tr>
+<tr><td><code>Concat reduce_conv1</code></td><td>64+64ch</td><td>128×26×26</td></tr>
+<tr><td><code>C3_n3</code></td><td>128×26×26</td><td>**P4: 128×26×26**</td></tr>
+<tr><td><code>bu_conv1</code></td><td>P4 128×26×26</td><td>128×13×13</td></tr>
+<tr><td><code>Concat lateral_conv0</code></td><td>128+128ch</td><td>256×13×13</td></tr>
+<tr><td><code>C3_n4</code></td><td>256×13×13</td><td>**P5: 256×13×13**</td></tr></tbody></table>
+<p>ここではstride=2のDepthwise Separable Convで空間解像度を下げます。<code>Concat</code>と<code>C3</code>が続くことで、Top-downで得た中間特徴が再統合されます。</p><div class="notice03">dark3 / dark4 / dark5 はBackboneの出力です。PAFPNから出る P3 / P4 / P5 とは値も処理段階も異なります。同じ52×52でも dark3 と P3 は同一ではありません。</div>
+<div class="example03"><div><b>実験：PANを追跡</b><p>P3 → down0 → Cat2 → P4 → down1 → Cat3 → P5の実数値を操作します。</p></div><a href="../lab/03-fpn-head/index.html">PANを操作する →</a></div></section>
+<section id="head"><h2>04. Decoupled Head：分類と回帰を分離</h2><p>P3・P4・P5にそれぞれ独立した予測Headを適用します。YOLOX-NanoではStemの1×1 Convで各段階を64チャネルへ揃え、Classification枝とRegression枝へ分かれます。</p>
+<div class="formula03">P3: [1, 64,52,52]  → Stem [1,64,52,52]
+P4: [1,128,26,26] → Stem [1,64,26,26]
+P5: [1,256,13,13] → Stem [1,64,13,13]
+
+Classification branch: Conv3×3 → Conv3×3 → 1×1 predictor (80ch)
+Regression branch:     Conv3×3 → Conv3×3 → 1×1 predictor (4ch)
+                                            └ 1×1 predictor (1ch objectness)
+
+Concatenate [BBox4, Obj1, Class80] → 85ch</div>
+<p>ClassとBBoxが別の畳み込み系列を持つ理由は、クラス判別と位置回帰が異なる最適化目的を持つためです。ObjectnessはRegression枝の中間特徴から出力されます。図で単なる3本の完全独立枝と描いてしまうと、実際の共有関係と異なるため注意が必要です。</p>
+<p>1つのグリッド位置から出力される85値は、<code>[tx, ty, tw, th, obj_raw, class_0_raw, ..., class_79_raw]</code> です。rawの先頭4値はBBoxを直接画素座標で表したものではありません。</p>
+<table class="data03"><thead><tr><th>出力階層</th><th>Head raw Shape</th><th>グリッド数</th></tr></thead><tbody><tr><td>P3</td><td><code>[1,85,52,52]</code></td><td>2,704</td></tr><tr><td>P4</td><td><code>[1,85,26,26]</code></td><td>676</td></tr><tr><td>P5</td><td><code>[1,85,13,13]</code></td><td>169</td></tr></tbody></table>
+<div class="formula03">grid positions = 52² + 26² + 13² = 3,549
+values per position (80 classes) = 4 + 1 + 80 = 85
+raw scalars per image = 3,549 × 85 = 301,665</div>
+<p>もし頭部1クラスに変更すれば計算上は <code>4+1+1=6</code> 値/位置になります。ただし、公開トレース自体は80クラスのPyTorchモデルから生成しており、1クラスで再forwardしたデータではありません。</p></section>
+<section id="raw"><h2>05. raw logitsと最終的なBBoxを区別する</h2><p>今回のトレースはHeadの <strong>raw</strong> です。元のYOLOX推論では、ObjectnessとClass logitsにはsigmoidを適用し、BBoxには格子座標とstrideを利用したDecodeを適用します。説明のための概念式は以下です。</p>
+<div class="formula03">P(object) = sigmoid(obj_raw)
+P(class_k) = sigmoid(cls_raw[k])
+
+cx = (grid_x + tx) × stride
+cy = (grid_y + ty) × stride
+w  = exp(tw) × stride
+h  = exp(th) × stride</div>
+<p>sigmoidは0〜1の数値に変換しますが、未学習重みのスコアを「本当に頭部である確率」と解釈してはいけません。さらにBBoxを最終検出結果として採用するにはScore計算とNMSなどの後処理が必要です。そこはUnit 04で扱います。</p><div class="notice03">参照モデルはObjectness・Class予測のbiasを事前確率0.01相当に初期化しています。raw値がおよそ-4.595、sigmoid後がおよそ0.01になるのは初期化の結果であって、モデルが学習済みである証拠でも、失敗している証拠でもありません。</div></section>
+<section id="tensor"><h2>06. 実テンソルの可視化と研究データの境界</h2><p>公開シミュレータで使用するデータは、同じセルフィー画像を416×416へレターボックスした後、固定seedで初期化したPyTorchモデルに投入して取得したものです。FocusからHeadまでの各テンソルの一部チャネルを数値配列として保存しています。</p>
+<p>画像の前処理は、縦横比を維持した縮小、左上配置、RGB値114のPadding、BGR順float32（0〜255）で行います。ここではPillow Bilinearを使用しており、公式デモのOpenCVとの間で画素値が若干異なる場合があります。</p>
+<p>ブラウザの3D画面は、実数値をチャネルごとに色へ変換して重ねたものです。色の正規化は表示専用で、元テンソルを再計算しません。非表示のチャネルもPyTorchモデル内部に存在しますが、Web配布サイズを抑えるため一部のみ保存しています。</p>
+<div class="notice03">未学習の特徴に「このチャネルは頭部の輪郭を学習した」などと意味づけしないでください。学習済み重みで同じ図を作成する際には、出所・ライセンス・チェックポイントのhash・前処理・評価条件を確認してください。</div></section>
+<section id="practice"><h2>07. PyTorchスクラッチ実装演習</h2><p>学生用の未完成コードを埋め、Upsample・Concat・PAFPNの2経路、Headのraw出力とshapeを自力で再現します。教師用の完了コードは公開ZIPに含めません。</p><pre>import torch
+
+# [1,128,13,13] → [1,128,26,26]
+upsampled = torch.nn.functional.interpolate(x, scale_factor=2,
+                                           mode='nearest')
+# [1,128,26,26] + [1,128,26,26]
+fused = torch.cat([upsampled, dark4], dim=1)
+assert fused.shape == (1,256,26,26)</pre>
+<p>実装課題では、単にShapeが一致すればよいわけではありません。Concatのチャネル順序、Upsampleで参照した入力位置、Headのraw順序と枝の共有関係を正しく再現してください。</p>
+<div class="example03"><div><b>教材からコードへ</b><p>PyTorchが導入されたローカルWSL環境でテストを実行します。学生用初期コードはNotImplementedErrorになる設計です。</p></div><a href="../downloads/unit03c_pytorch_starter.zip" download>スターターZIP ↓</a></div></section>
+<section id="questions"><h2>理解確認と参考実装</h2><ol><li>dark5とdark4を直接Concatできない理由を説明し、必要な演算を示してください。</li><li>Concatの前後で保持される値を、チャネル127/128の境界を使って具体的に示してください。</li><li>なぜTop-downの最終出力P3を再度Downsampleする経路があるのでしょうか。</li><li>Decoupled Headの中でObjectnessがRegression枝と共有する部分を示してください。</li><li>同じP3=52×52でも、1クラスと80クラスで違う値は何ですか。グリッド位置数も変わりますか。</li><li>未学習のlogitから頭部検出の性能を評価できない理由を説明してください。</li></ol>
+<p>一次資料：<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/yolo_pafpn.py">Megvii YOLOPAFPN公式実装</a>、<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/yolo_head.py">Megvii YOLOXHead公式実装</a>。教材のモデルはこれらの公開構造に対応する独立した教育用書き直しです。</p><p class="footer03"><a href="../lab/03-fpn-head/index.html">03-C シミュレータ</a><a href="../lab/03-nano/index.html">03-B Backboneに戻る</a><a href="../index.html">トップページ</a></p></section>
+</article></div></body></html>
