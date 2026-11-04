@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.4.0-unit04-prototype",
+  "version": "0.5.0-unit05-reconstructed",
   "locale": "ja-JP",
   "units": [
     {
@@ -94,8 +94,20 @@
     },
     {
       "id": "05-implementation",
-      "title": "YOLOX-Nanoスクラッチ実装",
-      "status": "planned"
+      "title": "YOLOX-Nanoスクラッチ実装・学習と評価",
+      "status": "prototype-ready",
+      "chapters": [
+        "学習用データの設計",
+        "YOLOX-NanoのforwardとHead",
+        "SimOTAとLoss",
+        "逆伝播とAdamWによる重み更新",
+        "Sigmoid・NMSによる推論",
+        "AP50・訓練と検証の比較"
+      ],
+      "textbook": "learn/05-training.html",
+      "lab": "lab/05-training/index.html",
+      "starter": "downloads/unit05_pytorch_starter.zip",
+      "note": "合成長方形による実PyTorch学習。旧セッションの数値再現ではない。頭部検出器ではない。"
     },
     {
       "id": "06-signed-ltrb",

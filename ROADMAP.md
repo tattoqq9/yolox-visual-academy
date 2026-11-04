@@ -1,28 +1,25 @@
 # YOLOX Visual Academy — Roadmap
 
-## Status: 2026-11-04
+## Status: 2026-11-05
 
-- **Unit 01**: RGB → Conv → feature maps — published prototype
-- **Unit 02**: stride → receptive field → grids — published prototype
-- **Unit 03-A**: Conv → BatchNorm → SiLU → introductory CSP — published prototype
-- **Unit 03-B**: Nano Backbone, DWConv, real untrained PyTorch feature trace — published prototype
-- **Unit 03-C**: YOLOPAFPN, Head branches, 38 nodes of untrained trace — published prototype
-- **Unit 04**: BBox Decode, IoU, NMS, SimOTA, Loss and gradients — educational prototype; browser and beginner review gate pending
-- **Unit 05 next**: YOLOX-Nano scratch model and training/evaluation
-- **Unit 06 planned**: tiny objects, diagnose positive assignment and signed LTRB ideation
-- **v1.0 planned**: beginner QA, YouTube narration, licensing and accessibility
+- **Unit 01** RGB → Convolution → feature maps — published prototype.
+- **Unit 02** Stride → receptive field → grids — published prototype.
+- **Unit 03-A** Conv → BatchNorm → SiLU → introductory CSP — published prototype.
+- **Unit 03-B** Nano Backbone, Depthwise, actual untrained PyTorch trace — published prototype.
+- **Unit 03-C** YOLOPAFPN, decoupled Head, 38-node untrained trace — published prototype.
+- **Unit 04** BBox Decode, IoU, NMS, SimOTA, Loss & gradients — published educational prototype.
+- **Unit 05** One-class YOLOX-Nano, actual CPU training on 1/8 procedurally generated rectangle images, separate validation images, AP50, checkpoint restoration, interactive browser trace — reconstructed v0.5 prototype; public post-deploy GUI review pending.
+- **Unit 06 planned** Diagnosis of tiny heads, score failure, assignment behavior and Signed LTRB ideation.
+- **v1.0 planned** Beginner QA, narrated YouTube series, license provenance and accessibility audit.
 
-## Release policy
+## Scientific gates
 
-- All Units remain playable; current site and 28+ public HTTP endpoints must pass
-- `python3 scripts/check_site.py site` and `python3 -m unittest discover -s tests -v` must PASS
-- `node --test tests/unit04_math.test.cjs` must PASS
-- Local browser interaction tests on PC and phone must PASS; publicly served GUI check separate
-- Numerical formulas are grounded in official YOLOX `yolo_head.py`/`losses.py`, with variant note
-- Actual untrained forward trace and synthetic GT examples labeled accurately
-- `main` updated only after local PASS and production deploy validated by GitHub Actions
-- Copyright, image source, dataset/weight license, and source attribution audited
+- Unit05 actual experimental results from reconstruction differ from preserved prior-session notes. Do not claim recovery of original training checkpoints or numerical replication.
+- Single-class synthetic rectangle AP50 is not COCO mAP or real head-detection performance.
+- Track train-vs-eval discrepancies, including BatchNorm statistics and low score, before scientific conclusions.
+- Students must distinguish genuine PyTorch weight updates from browser playback of the resulting trace.
+- New `main` commits only after local regression PASS, static asset checks and browser smoke. GitHub Actions deploy and public GUI check are separate gates.
 
 ## Protected boundaries
 
-This repository is the only target. Do not edit, stop, build, commit or reconfigure the user's head detection R&D or Tatto Engine repositories. Educational site stays static, no API, uploads or arbitrary external user-image transmission.
+Only `tattoqq9/yolox-visual-academy` is in scope; do not write to head-detection R&D, Voxel Engine, or their shared settings/processes.

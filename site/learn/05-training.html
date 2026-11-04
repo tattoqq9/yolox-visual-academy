@@ -1,0 +1,44 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="YOLOX-Nanoをスクラッチ実装して学習、推論、AP50を測るための日本語教材"><title>Unit 05 教科書｜実際に学習するYOLOX-Nano</title><link rel="stylesheet" href="../assets/site.css"><style>main{max-width:920px;margin:auto;padding:35px 22px 100px;line-height:1.9}h1{font-size:clamp(26px,4vw,43px);line-height:1.35}h2{margin-top:42px;font-size:25px;border-bottom:1px solid #dde7df;padding-bottom:9px}h3{font-size:19px;margin-top:27px}p,li{font-size:15px;color:#314b3e}code{background:#edf3ee;padding:2px 5px;border-radius:4px;font-size:.9em}pre{overflow:auto;background:#19322b;color:#e1f6e6;padding:21px;border-radius:10px;line-height:1.6;font-size:13px}pre code{background:none;padding:0;color:inherit}.pills{display:flex;flex-wrap:wrap;gap:9px}.pills a{display:inline-block;padding:8px 12px;border:1px solid #bdd6c5;background:white;border-radius:8px;font-size:12px;text-decoration:none}.notice{background:#fff7e3;border:1px solid #e7d19a;border-radius:10px;padding:14px;margin:17px 0}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #d8e4db;padding:9px;text-align:left}th{background:#eef6ef}blockquote{background:#edf7ef;border-left:4px solid #178e63;padding:10px 16px;margin:20px 0}.formula{padding:14px;border:1px solid #d5e9da;background:#eff8f0;border-radius:9px;font-family:ui-monospace,monospace;overflow-wrap:anywhere}a{color:#13764e}footer{font-size:12px;color:#5b7467;margin-top:60px;border-top:1px solid #dae5dc;padding-top:17px}</style></head><body>
+<main><a href="../index.html">← YOLOX Visual Academy</a><p>UNIT 05 · BUILD / TRAIN / INFER / EVALUATE</p><h1>YOLOX-Nanoを、自分の手で学習させる</h1><p>Unit 01〜04で学んだConv、CSP、PAFPN、Decoupled Head、BBox Decode、SimOTA、IoU、Lossを、<strong>実際に重みが更新される物体検出器</strong>へ統合します。</p><div class="pills"><a href="../lab/05-training/index.html">学習シミュレータ</a><a href="../downloads/unit05_pytorch_starter.zip" download>学生用PyTorch演習ZIP</a><a href="04-detection.html">前章：SimOTA・Loss</a></div>
+<div class="notice"><strong>この教材の数値の出所</strong><p>今回は公開直前の作業領域からUnit 05コード・モデルが失われたため、合成データ生成器と訓練器を再構築し、600更新の2実験を改めて実行しました。以下はその<strong>再構築後の実測値</strong>です。前回の記録（8枚学習の検証AP50=0.7857など）を再現した結果ではありません。</p><p>学習対象は黄色い人工長方形であり、人物・頭部ではありません。GitHub Pagesでは学習ログと予測BBoxを再生するだけで、ブラウザ内学習は行いません。</p></div>
+<nav aria-label="章内ナビ" class="pills"><a href="#architecture">モデル</a><a href="#data">データ</a><a href="#assign">SimOTA</a><a href="#loss">Loss</a><a href="#infer">推論</a><a href="#metric">AP50</a><a href="#results">実験結果</a><a href="#practice">課題</a></nav>
+<h2 id="architecture">1. ネットワークを組み立てる</h2>
+<p>本章は公式YOLOX-Nanoのネットワーク形状を参考にした独立実装です。設定は <code>depth=0.33</code>、<code>width=0.25</code>、<code>depthwise=True</code>、クラス数1です。ネットワークの総パラメータ数は<strong>896,754</strong>です。訓練手順は本章向けの簡略版で、公式COCOレシピとは異なります。</p>
+<div class="formula">入力 (1,3,128,128)<br>Backbone (Focus → dark2 → dark3/dark4/dark5)<br>Neck (PAFPN) → P3(64,16,16), P4(128,8,8), P5(256,4,4)<br>Head (BBox4 + Objectness1 + Classification1)<br>候補位置 16²+8²+4²=336 個</div>
+<p>YOLOXのP3/P4/P5はそれぞれstride=8/16/32です。Tensorの形状（B,C,H,W）を追い、各格子で何を予測するかを説明できるようにします。</p>
+<h2 id="data">2. 教師データを準備する</h2>
+<p>画像とGTは同じseedを使ってコードで生成します。128×128の暗い背景に、色の付いた長方形が1個だけ存在します。GTは中心と幅高さ <code>(cx,cy,w,h)</code> の4値です。</p>
+<p>検証用6枚は学習用画像とは別の乱数列から生成します。<strong>少量データのAP50の変動は極めて大きく、未知の写真や実物体への汎化は示しません。</strong></p>
+<h2 id="assign">3. どの格子を正例にするのか</h2>
+<p>Unit 04で解説した中心制約型のSimOTAを、1GTの場合に限定して実装します。GT中心からの距離が各軸で <code>1.5×stride</code> 未満の候補を集め、BBox IoUと分類のコストを用いて動的に正例を選びます。</p>
+<div class="formula">candidate_center = (grid_index + 0.5) × stride<br>cost = −log(√(σ(obj)·σ(cls))) + 3 × (−log(IoU+ε))<br>dynamic_k = max(1, int(Σ top10 IoU))<br>positive = argmin(cost, k=dynamic_k)</div>
+<p>この例は1画像1GTなので、複数GT間の競合解消は起こりません。完全なSimOTA実装では、複数GTのコスト行列、幾何候補の和集合、重複割当の解消が必要です。</p>
+<h2 id="loss">4. Lossから重みの更新まで</h2>
+<p>候補に対して回帰・Objectness・Classificationの損失を計算し、正例数で正規化します。BBoxはraw値から復元し、IoUを使って損失を計算します。Obj損失にはすべての格子を含みます。正例の分類教師にはstop-gradientしたIoU品質を用います。</p>
+<div class="formula">L_reg = 5×mean(1−IoU²)<br>L_obj = sum(BCEWithLogits(obj, target)) / num_positive<br>L_cls = sum(BCEWithLogits(cls_positive, IoU.detach())) / num_positive<br>L_total = L_reg + L_obj + L_cls</div>
+<pre><code>model.train()
+optimizer.zero_grad(set_to_none=True)
+raw_maps = model(image)
+loss, diagnostics = train_step_loss(raw_maps, gt)
+loss.backward()
+optimizer.step()</code></pre>
+<p><code>train_step_loss</code> が勾配を保持することが重要です。途中で <code>.item()</code> や <code>.detach()</code> を使ってLoss本体を切り離すと、学習できません。SimOTAの正例選択だけは離散操作として勾配を止めます。</p>
+<h2 id="infer">5. 推論時は何が違うか</h2>
+<p>推論では <code>model.eval()</code> を使い、BBoxをデコードして各格子のScoreを計算し、NMSで重複を抑制します。</p>
+<div class="formula">bbox_center = (grid_index + raw_xy) × stride<br>bbox_wh = exp(raw_wh) × stride<br>score = σ(objectness) × σ(classification)</div>
+<p>BatchNormは学習モードではミニバッチ統計を使い、推論モードでは移動平均統計を使います。本章の<strong>batch=1</strong> では、この差が非常に大きくなる可能性があります。訓練中の良いIoUが、そのまま推論時の良いBBoxを保証するとは限りません。</p>
+<h2 id="metric">6. AP50を数える</h2>
+<p>評価では各画像の予測をScore順に並べ、IoU≥0.5かつ未検出GTへの最初の一致をTP、重複や不一致をFPとします。PR曲線の面積（連続補間）をAP50とします。TP/FP/FNは別途Score≥0.25で計算しているため、AP50とTP数は一致しないことがあります。</p>
+<p>6GTしかないため、TP1件の増減だけでもRecallは1/6（約0.167）刻みになります。学習画像のAP50が上がっても、検証AP50が同じように上がるとは限りません。</p>
+<h2 id="results">7. 再構築後の実測比較</h2>
+<div class="table-scroll"><table><thead><tr><th>学習画像</th><th>更新回数</th><th>学習AP50</th><th>検証AP50</th><th>TP/FP/FN（score≥0.25）</th></tr></thead><tbody><tr><td>1枚</td><td>600</td><td>0.0000</td><td>0.0185</td><td>0 / 0 / 6</td></tr><tr><td>8枚</td><td>600</td><td>0.7500</td><td>0.1019</td><td>1 / 2 / 5</td></tr></tbody></table></div>
+<p>1枚学習では学習モードの正例IoUが高くなった一方、<code>model.eval()</code> で推論したBBoxのIoU・AP50が低い結果となりました。<strong>原因をBatchNormだけと断定することはできません。</strong> モデル状態や正例とScoreの対応、評価モードの差を追加診断する必要があります。</p>
+<p>前回の作業記録には「1枚学習AP50=1.0、8枚学習検証AP50≈0.7857」が残っています。しかし、その生成器・学習済みチェックポイントは失われているため、現時点で原結果を再現できたとは主張しません。今回の比較は完全に別の実行結果です。</p>
+<h2 id="practice">8. 実装演習</h2>
+<p>学生用ZIPには7つのTODOがあります。第1〜5課題で数式の整合性、第6課題で実際のパラメータ更新、第7課題で推論・評価を学びます。参照アーキテクチャだけを同梱し、回答は含めていません。</p>
+<pre><code>python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install torch numpy pillow
+python -m unittest -v test_student.py</code></pre>
+<p>課題の初期状態で例外が出るのは正常です。完成判定は自分でコードを書き、ユニットテストをPASSさせることです。</p>
+<h2>参照と制約</h2><p>アーキテクチャ参考：<a href="https://github.com/Megvii-BaseDetection/YOLOX">Megvii-BaseDetection/YOLOX</a>（Apache-2.0）。教育用実装は独立コードであり、公式重み・公式Trainerコード・実在人物の教師データを配布していません。PyTorchの数値・BLASバージョン差によって再実行時のAP50が変動する場合があります。</p><blockquote>ここまでの到達目標は「モデルの構造を理解する」から、「正しい更新と推論を自力で組み合わせ、学習／評価の失敗を診断できる」への移行です。</blockquote><div class="pills"><a href="../lab/05-training/index.html">実学習ビューアへ戻る</a><a href="../downloads/unit05_pytorch_starter.zip" download>学生用演習ZIP</a><a href="../index.html">すべての教材へ戻る</a></div><footer>YOLOX Visual Academy · Unit 05 · 合成データの教育用実験／過去の記録と今回の再現結果を区別</footer></main></body></html>

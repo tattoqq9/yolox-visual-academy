@@ -15,3 +15,6 @@ __pycache__/
 *.ckpt
 **/trace_trained*.json
 .venv-unit03b/
+
+# Unit 05: keep private/temporary training outputs and model checkpoints out of Git
+out/

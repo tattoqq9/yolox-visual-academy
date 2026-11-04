@@ -46,6 +46,18 @@ PATHS = {
     'lab/04-detection/trace04.json': b'yva.unit04.untrained-head-raw.v1',
     'learn/04-detection.html': b'BBox',
     'downloads/unit04_python_starter.zip': b'PK\x03\x04',
+    'lab/05-training/index.html': b'YOLOX',
+    'lab/05-training/app.js': b'yva.unit05.public.v1',
+    'lab/05-training/styles.css': None,
+    'lab/05-training/trace05.json': b'yva.unit05.public.v1',
+    'lab/05-training/val-0.png': b'\x89PNG\r\n\x1a\n',
+    'lab/05-training/val-1.png': b'\x89PNG\r\n\x1a\n',
+    'lab/05-training/val-2.png': b'\x89PNG\r\n\x1a\n',
+    'lab/05-training/val-3.png': b'\x89PNG\r\n\x1a\n',
+    'lab/05-training/val-4.png': b'\x89PNG\r\n\x1a\n',
+    'lab/05-training/val-5.png': b'\x89PNG\r\n\x1a\n',
+    'learn/05-training.html': b'YOLOX',
+    'downloads/unit05_pytorch_starter.zip': b'PK\x03\x04',
 }
 
 
