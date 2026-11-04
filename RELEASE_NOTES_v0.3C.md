@@ -6,6 +6,7 @@
 - New textbook, PyTorch incomplete student starter and automated tests, video storyboard.
 - `tools/unit03c/export_neck_head.py` deterministic trace generation using the same Unit03-B reference model and preprocessing.
 - Python standard-library trace integrity checks in CI; existing Units 01–03-B retained.
+- Extended public HTTP verification script to cover 28 endpoints including Unit03-C assets.
 
 ## Model and dataset provenance
 - Model corresponds to official YOLOX-Nano topology (depth=0.33, width=0.25, depthwise=True), 80 classes, input 416×416.

@@ -28,6 +28,12 @@ bash scripts/preview.sh
 - 80クラス→1クラスの仮想切替はShape計算のみであることを確認
 - DevTools Consoleに未処理のJavaScriptエラーがないことを確認
 
+公開環境のHTTP検証（全28ファイル・アセット）：
+
+```bash
+python3 scripts/verify_live.py https://tattoqq9.github.io/yolox-visual-academy/ --attempts 6 --interval 10
+```
+
 PyTorchでトレースの数値を再生成する場合：
 
 ```bash

@@ -116,6 +116,15 @@ class Unit03CTrace(unittest.TestCase):
         self.assertTrue((ROOT/'site/assets/003Z-selfie.png').is_file())
         self.assertLess(self.path.stat().st_size,3*1024*1024)
 
+    def test_live_checker_covers_new_unit(self):
+        import importlib.util
+        path=ROOT/'scripts/verify_live.py'
+        spec=importlib.util.spec_from_file_location('yva_live_check',path)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        self.assertGreaterEqual(len(module.PATHS),28)
+        for p in ('lab/03-fpn-head/index.html','lab/03-fpn-head/trace.json','downloads/unit03c_pytorch_starter.zip'):
+            self.assertIn(p,module.PATHS)
+
     def test_student_remains_todo(self):
         text=(ROOT/'site/code/unit03c/student.py').read_text()
         self.assertGreaterEqual(text.count('NotImplementedError'),5)
