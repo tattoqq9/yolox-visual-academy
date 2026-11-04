@@ -1,0 +1,6 @@
+{
+  "info": {"description": "SYNTHETIC UNIT06 fixture only; no real head image"},
+  "categories": [{"id": 1, "name": "synthetic_square"}],
+  "images": [{"id": 1, "file_name": "synthetic-tiny.png", "width": 128, "height": 128}],
+  "annotations": [{"id": 1, "image_id": 1, "category_id": 1, "bbox": [46, 62, 4, 4], "ignore": 0, "iscrowd": 0}]
+}

@@ -9,8 +9,8 @@
 - **Unit 03-C** YOLOPAFPN, decoupled Head, 38-node untrained trace — published prototype.
 - **Unit 04** BBox Decode, IoU, NMS, SimOTA, Loss & gradients — published educational prototype.
 - **Unit 05** One-class YOLOX-Nano, actual CPU training on 1/8 procedurally generated rectangle images, separate validation images, AP50, checkpoint restoration, interactive browser trace — reconstructed v0.5 prototype; public post-deploy GUI review pending.
-- **Unit 06 planned** Diagnosis of tiny heads, score failure, assignment behavior and Signed LTRB ideation.
-- **v1.0 planned** Beginner QA, narrated YouTube series, license provenance and accessibility audit.
+- **Unit 06** Synthetic tiny-BBox geometry, score/assignment diagnostics, signed LTRB ideation, validation-only COCO importer — prototype implemented; post-deploy GUI review pending.
+- **v1.0 planned** Beginner QA, narrated YouTube series, license provenance and accessibility audit. **After course completion:** user-provided formal images and labels reviewed, converted and integrated only with explicit rights approval.
 
 ## Scientific gates
 
@@ -23,3 +23,9 @@
 ## Protected boundaries
 
 Only `tattoqq9/yolox-visual-academy` is in scope; do not write to head-detection R&D, Voxel Engine, or their shared settings/processes.
+
+## Future formal data upgrade gate
+
+- Existing synthetic lesson stays usable, and formal data will be a separate opt-in track after Units 01–06 are reviewed.
+- Local-only COCO validation produces unpublishable manifests (SHA-256, bbox/category/ignore audit, split leakage checks). No automatic uploads or dataset promotion.
+- Public examples require explicit image/label/model license and privacy review, plus new reproduced weights/trace/metrics and full UI regression.

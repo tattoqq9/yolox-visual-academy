@@ -1,2 +1,10 @@
+Historical origin (v0.2):
 Source of site/: YOLOX_Visual_Academy_GitHubPages_v0_2.zip
 Original zip SHA256: ecf29c697e9b2d47c3d1cf8b47ba3fd4f70a1aced347c1633608e4f3d7fad4fa
+
+Unit 06 v0.6 artifact digests (SHA256):
+2ad8f10a5917817596ee246673061f79b7771f363a6c52a33605952fa2a25474  site/lab/06-tiny/math.js
+a0de5a45870bcc4190edebcc1ac12df8efc3505ec3aa147e7bf4698508d6e74c  site/lab/06-tiny/app.js
+58228462b329926b196848404e22101a35916eb935b1934f32fc8cb5871e8993  site/lab/06-tiny/synthetic-tiny.png
+edbc04dc8439df8434c4c1624b89caf692b7234737a3c7f6ce3b5484984b2140  tools/unit06/dataset_contract.py
+100eea06b577da39ffa091106910fc28e6bc49fc5698627b9adbed8b467b95a9  site/downloads/unit06_python_starter.zip

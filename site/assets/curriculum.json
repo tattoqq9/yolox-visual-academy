@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.5.0-unit05-reconstructed",
+  "version": "0.6.0-unit06-prototype",
   "locale": "ja-JP",
   "units": [
     {
@@ -111,8 +111,20 @@
     },
     {
       "id": "06-signed-ltrb",
-      "title": "Signed LTRB発明演習",
-      "status": "planned"
+      "title": "極小BBox・正例割当・Signed LTRBの研究演習",
+      "status": "prototype-ready",
+      "chapters": [
+        "候補格子と幾何制約",
+        "BBox品質とObjectness／Classification",
+        "SimOTA CostとDynamic K",
+        "4出力値のBBox表現と順序制約",
+        "公平なA/B実験計画",
+        "正式データ受入仕様とプライバシー"
+      ],
+      "textbook": "learn/06-tiny.html",
+      "lab": "lab/06-tiny/index.html",
+      "starter": "downloads/unit06_python_starter.zip",
+      "note": "合成候補の数学教材。実頭部ラベル・学習済み重みなし。正式データは後日ユーザー提供。"
     }
   ]
 }

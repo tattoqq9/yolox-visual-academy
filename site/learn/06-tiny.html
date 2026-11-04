@@ -1,0 +1,58 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="YOLOXの極小BBox、幾何候補、SimOTA、Scoreを分解しSigned LTRBを比較する研究型教材。"><title>Unit 06 教科書｜極小BBoxとSigned LTRB研究演習</title><link rel="stylesheet" href="../assets/site.css"><style>main{max-width:950px;margin:auto;padding:34px 22px 100px;line-height:1.9}h1{font-size:clamp(26px,4vw,43px);line-height:1.35}h2{margin-top:42px;font-size:25px;border-bottom:1px solid #dde7df;padding-bottom:9px}h3{font-size:19px;margin-top:24px}p,li{font-size:15px;color:#314b3e}code{background:#edf3ee;padding:2px 5px;border-radius:4px;font-size:.9em}pre{overflow:auto;background:#19322b;color:#e1f6e6;padding:21px;border-radius:10px;line-height:1.6;font-size:13px}pre code{background:none;padding:0;color:inherit}.pills{display:flex;flex-wrap:wrap;gap:9px}.pills a{display:inline-block;padding:8px 12px;border:1px solid #bdd6c5;background:white;border-radius:8px;font-size:12px;text-decoration:none}.notice{background:#fff7e3;border:1px solid #e7d19a;border-radius:10px;padding:14px;margin:17px 0}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #d8e4db;padding:9px;text-align:left}th{background:#eef6ef}blockquote{background:#edf7ef;border-left:4px solid #178e63;padding:10px 16px;margin:20px 0}.formula{padding:14px;border:1px solid #d5e9da;background:#eff8f0;border-radius:9px;font-family:ui-monospace,monospace;overflow-wrap:anywhere}a{color:#13764e}footer{font-size:12px;color:#5b7467;margin-top:60px;border-top:1px solid #dae5dc;padding-top:17px}</style></head><body><main>
+<a href="../index.html">← YOLOX Visual Academy</a><p>UNIT 06 · RESEARCH / TINY BOXES / ASSIGNMENT</p><h1>極小BBoxは「見えない」のか、それとも「正例・Score・回帰」で失敗するのか</h1>
+<p>Unit 01〜05を学んだ学生が、YOLOXの小物体検出を<strong>計測可能な複数の仮説に分解</strong>し、改善案を数式と実験計画に落とし込むための教材です。結論を先に暗記するのではなく、まずSimOTA候補位置とBBox品質を観察してください。</p>
+<div class="pills"><a href="../lab/06-tiny/index.html">体験型研究シミュレータ</a><a href="../downloads/unit06_python_starter.zip" download>Python演習</a><a href="05-training.html">前章：学習・評価</a></div>
+<div class="notice"><strong>データと主張の範囲</strong><p>今回表示するGT・BBox候補・Objectness・Classificationは<strong>数式説明のために独立生成した人工値</strong>です。頭部検出モデルを実行した結果ではなく、アノテーション済みの実画像も使用していません。したがって、このUnitから「Signed LTRBで実際の頭部検出精度が改善した」とは主張できません。</p><p>学習教材を一通り作った後、権利と注釈品質が確認された正式データをユーザー提供の素材に置き換える予定です。実データが無い段階では公開用デモに合成データを明示的に残します。</p></div>
+<nav aria-label="章内" class="pills"><a href="#diagnosis">診断</a><a href="#geom">幾何候補</a><a href="#score">Score</a><a href="#math">BBox表現</a><a href="#research">研究計画</a><a href="#formal">正式データ</a></nav>
+<h2 id="diagnosis">1. まず失敗箇所を4つに分ける</h2>
+<div class="table-scroll"><table><thead><tr><th>失敗可能性</th><th>観測する値</th><th>考えられる原因・検証</th></tr></thead><tbody>
+<tr><td>特徴抽出</td><td>P2/P3/P4/P5の応答・位置別特徴</td><td>小物体の空間情報が残っているか</td></tr>
+<tr><td>候補・BBox回帰</td><td>GTごとの幾何候補数、最大raw IoU</td><td>候補があるか、形は合っているか</td></tr>
+<tr><td>正例割当</td><td>候補のCost、Dynamic K、選択数</td><td>良い候補に教師信号が届くか</td></tr>
+<tr><td>信頼度</td><td>Objectness / Classification / Score</td><td>位置・形が正しくてもscoreで落ちていないか</td></tr>
+</tbody></table></div>
+<p>同じGTが検出されない場合でも、失敗箇所によって対策は変わります。入力解像度、stride 4のP2導入、Loss、割当、BBox表現をすべて一度に変えると、原因がわからなくなります。変更はA/B条件で分離してください。</p>
+<h2 id="geom">2. 幾何候補：4pxでもGridは存在する</h2>
+<p>ここではYOLOX公式の <code>get_geometry_constraint</code> に見られる中心半径1.5を参照し、1GT・1スケールの候補抽出を再現します。実際のYOLOXはP3/P4/P5を合算して処理するため、このシミュレータは<strong>全SimOTAの一部分</strong>です。</p>
+<div class="formula">grid_center = ((gx+0.5)·stride, (gy+0.5)·stride)<br>eligible = |grid_center_x − GT_cx| &lt; 1.5·stride<br>　AND |grid_center_y − GT_cy| &lt; 1.5·stride</div>
+<p>例えばStride8では格子の参照中心は8pxごとですが、GTの幅が4pxでも中心近傍に候補を持てます。<strong>「Stride8だから4px未満のBBoxは表現できない」は誤りです。</strong>YOLOXの幅は対数で表現され、負のraw幅を使えばStrideより小さなBBoxを表せます。ただし、候補位置が存在することは高い特徴品質や十分なScoreを保証しません。</p>
+<p>青い候補は中心制約を通過、緑（Score不足時は赤茶）はコストで選ばれた正例です。黄色は架空GT。右上の拡大図は数値説明用であり、元画像の解像度が上がったわけではありません。</p>
+<h2 id="score">3. IoU・SimOTA・Scoreを混同しない</h2>
+<p>候補のBBoxとGTのIoUが高くても、ObjectnessまたはClassificationが低いと検出Scoreは下がります。一方、SimOTAの内部では分類CostとIoU Costを組み合わせて正例を選択します。<strong>推論のScore閾値は正例割当そのものを変えません。</strong></p>
+<div class="formula">Score = sigmoid(obj_logit) · sigmoid(cls_logit)<br>classCost = BCE(√(sigmoid(obj)·sigmoid(cls)), positive_target=1)<br>IoUCost = −log(IoU+1e−8)<br>Cost = classCost + 3·IoUCost<br>Dynamic K = max(1, floor(sum(top10 IoUs)))</div>
+<p>上記は1クラス・1GTの授業用簡略式です。公式コードでは全クラスのBCE、GTごとのCost行列、幾何制約違反への大きな罰則、複数GTとの競合解消があります。公式YOLOXの <code>yolo_head.py</code> のバージョンによって細部が異なり得るので、研究実験では必ずコミットを固定します。</p>
+<h3>自分の研究仮説</h3><p>「幾何候補あり・最大IoU高・Objectness低」の状態で、BBox回帰式だけ変更すると検出Scoreは改善するでしょうか。<strong>答えは現段階では決まりません。</strong>候補数、BBox品質、信頼度を同じ画像で別々に記録する必要があります。</p>
+<h2 id="math">4. 4出力値の別の解釈を考案する</h2>
+<p>まず演習ページの記入欄に、独自のBBox表現を書いてください。次の定義は<strong>仮説提出後に読む解説</strong>として扱います。</p>
+<details><summary>比較解説を開く：YOLOXとSigned LTRB</summary>
+<h3>YOLOX標準：中心と対数幅高さ</h3><div class="formula">cx = (gx + tx)·stride,　cy = (gy + ty)·stride<br>w = exp(tw)·stride,　h = exp(th)·stride<br>x1 = cx−w/2,　x2=cx+w/2</div>
+<p>局所微分 <code>∂w/∂tw=w</code>。小さなGTを扱う際に、スケールと損失関数の組合せがどう勾配へ影響するかが研究対象です。<code>w&gt;0</code> は保証されます。</p>
+<h3>Signed LTRB：参照中心から辺までの符号付き距離</h3><div class="formula">l = refx − x1,　t = refy − y1<br>r = x2 − refx,　b = y2 − refy<br>x1 = refx−l,　y1=refy−t<br>x2 = refx+r,　y2=refy+b<br>width = l+r,　height = t+b</div>
+<p>参照中心がBBoxの外側でも、符号付きの値を使えば四辺を表現できます。ただし、<strong>raw4値を無制約で出力すると width≤0 や height≤0 という無効BBoxも生じます。</strong>境界順序をどう保証するか、Lossをどう設計するかが重要です。</p>
+<h3>順序保証付きの別案</h3><div class="formula">cx = refx + dx, cy = refy + dy<br>w = softplus(uw) + ε, h = softplus(uh) + ε<br>x1 = cx−w/2, x2 = cx+w/2</div>
+<p>これは四辺独立出力のSigned LTRBそのものではありませんが、常に正の幅・高さを保証します。どちらが学習に有利かは数式の形だけでは決まりません。<strong>同じ予測数値から算出したIoUを、改善率として使わないこと。</strong></p></details>
+<h2 id="research">5. 本当に改善したかを調べる実験計画</h2>
+<p>比較には同じ訓練/検証/テスト画像、同じGT、同じモデルの総パラメータと更新回数、学習率・データ拡張・seed群を使います。変更点をBBox表現・Decoder・対応Lossのみに絞ります。</p>
+<div class="table-scroll"><table><thead><tr><th>条件</th><th>変更点</th><th>最低限の確認</th></tr></thead><tbody><tr><td>R0</td><td>標準YOLOXのDecode・Loss</td><td>基準線のAP・候補・Score</td></tr><tr><td>R1</td><td>Signed LTRB + 適切なLoss</td><td>無効BBox、勾配、AP、推論負荷</td></tr><tr><td>R2</td><td>順序保証付きパラメータ化</td><td>常時有効BBox、勾配、汎化性能</td></tr></tbody></table></div>
+<p>GTサイズ別（例：4px未満、4〜8px、8〜16px、16px以上）、視点、暗所、鏡・ガラス、水面、見切れなどで分割し、AP50:95・Recall@固定Precision・GTあたりの正例数・raw max IoU・Objectness/Classification・無効BBox率・計算量を測ります。サンプル数が少ない群では信頼区間や個数を併記します。</p>
+<h2 id="formal">6. 後日、正式な画像とラベルを投入するために</h2>
+<p>現時点では実データを要求しません。教材構造が完成したら、ユーザーが用意する画像とBBoxラベルを取り込みます。その前提として、画像サイズ、BBox座標とカテゴリ、分割を固定する<strong>COCO形式の受入契約</strong>を実装しました。</p>
+<h3>必要な入力</h3>
+<p>COCO JSONの <code>images</code>（id、file_name、width、height）、<code>categories</code>（id、name）、<code>annotations</code>（id、image_id、category_id、bbox=[x,y,w,h]、ignore、iscrowd）と、対応するPNG/JPEG画像です。1枚に複数の頭部・人物・ignore領域を許容します。bboxは原画像ピクセル座標です。Annotation JSONのカテゴリを勝手に再割当しません。</p>
+<p>画像は<strong>train / val / testを別ファイル</strong>に分け、同じ画像のSHA-256が分割をまたいで出現しないことを検査します。ただし内容が視覚的にほぼ同じ近重複や人物単位のリークは別途監査が必要です。</p>
+<pre><code>python3 tools/unit06/dataset_contract.py \
+  --images /private/dataset/train/images \
+  --annotations /private/dataset/train/coco.json \
+  --split train
+
+python3 tools/unit06/dataset_contract.py \
+  --images /private/dataset/val/images \
+  --annotations /private/dataset/val/coco.json \
+  --split val \
+  --compare-manifest out/unit06/dataset_manifest_train.json</code></pre>
+<p>処理はローカルで完結し、画像内容はアップロードしません。出力先はデフォルトでGit管理対象外の<code>out/unit06/</code>です。<strong>公開用教材への自動変換・自動アップロードはありません。</strong>画像・ラベルの商用・再配布許諾、モデル重み、プライバシー・肖像権の確認を経た後、公開するサブセットとトレースを明示的に選びます。</p>
+<p>現在の実装はCOCO JSONのみ対応です。YOLO txtなど別形式のラベルは、正式データを受け取った段階で変換層を設計します。検証ツールを通しても、アノテーション自体の品質や素材の利用権利を自動保証することはありません。</p>
+<h2>7. 演習・理解度テスト</h2><p>学生用の7課題では、IoU、格子中心、幾何制約、Dynamic K、YOLOX Decode、Signed LTRB Decode、左右上下の妥当性判定を実装します。最初は意図的に <code>NotImplementedError</code> です。</p>
+<div class="pills"><a href="../lab/06-tiny/index.html">シミュレータに戻る</a><a href="../downloads/unit06_python_starter.zip" download>実装課題を取得</a><a href="../index.html">カリキュラム</a></div>
+<h2>参照</h2><p>数式の確認：<a href="https://github.com/Megvii-BaseDetection/YOLOX/blob/main/yolox/models/yolo_head.py">YOLOX YOLOXHead実装</a>、<a href="https://github.com/Megvii-BaseDetection/YOLOX">YOLOX project</a>（Apache-2.0）。このUnitの教材コードは独立実装です。実験を再現する際は使用した公式コードのcommit SHAを記録してください。</p>
+<blockquote>改善方法を先に覚えるのではなく、どの段階が失敗したかを観測し、反証可能な仮説を作ることが到達目標です。</blockquote><footer>YOLOX Visual Academy · Unit 06 · すべての物体・GT・Scoreは合成教材用。正式データへの更新は別工程。</footer></main></body></html>

@@ -58,6 +58,14 @@ PATHS = {
     'lab/05-training/val-5.png': b'\x89PNG\r\n\x1a\n',
     'learn/05-training.html': b'YOLOX',
     'downloads/unit05_pytorch_starter.zip': b'PK\x03\x04',
+    'lab/06-tiny/index.html': b'Unit 06',
+    'lab/06-tiny/math.js': b'decodeSignedLTRB',
+    'lab/06-tiny/app.js': b'YvaMath06',
+    'lab/06-tiny/styles.css': None,
+    'lab/06-tiny/synthetic-tiny.png': b'\x89PNG\r\n\x1a\n',
+    'learn/06-tiny.html': b'YOLOX',
+    'downloads/unit06_python_starter.zip': b'PK\x03\x04',
+
 }
 
 

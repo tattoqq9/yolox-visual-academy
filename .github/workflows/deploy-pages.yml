@@ -43,6 +43,12 @@ jobs:
         run: |
           python3 -m unittest tests.test_unit05_contract -v
           node --check site/lab/05-training/app.js
+      - name: Validate Unit 06 geometry and dataset contracts
+        run: |
+          python3 -m unittest tests.test_unit06_contract -v
+          node --test tests/unit06_math.test.cjs
+          node --check site/lab/06-tiny/math.js
+          node --check site/lab/06-tiny/app.js
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static files

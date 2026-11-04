@@ -18,3 +18,8 @@ __pycache__/
 
 # Unit 05: keep private/temporary training outputs and model checkpoints out of Git
 out/
+
+# Formal dataset material is private; never stage raw images, labels or manifests
+private/
+datasets/
+checkpoints/

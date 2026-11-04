@@ -1,0 +1,16 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const M=require('../site/lab/06-tiny/math.js');
+const approx=(a,b,eps=1e-8)=>assert.ok(Math.abs(a-b)<eps,`${a} !≈ ${b}`);
+test('bbox identical and one-pixel tiny shift',()=>{approx(M.iou([0,0,4,4],[0,0,4,4]),1);approx(M.iou([0,0,4,4],[1,0,5,4]),.6)});
+test('YOLOX exact encode/decode round-trip for 2px box',()=>{const b=[43,55,45,57],raw=M.encodeYolox(b,5,7,8),out=M.decodeYolox(raw,5,7,8);out.forEach((v,i)=>approx(v,b[i]));approx(Math.exp(raw[2])*8,2)});
+test('YOLOX width gradient equals predicted width',()=>{const x=Math.log(2/8),h=1e-6;approx(((Math.exp(x+h)-Math.exp(x-h))/(2*h))*8,2,1e-5)});
+test('Signed LTRB represents off-center tiny box and negative distances',()=>{const box=[44,44,46,46],refx=48,refy=48,raw=M.encodeSignedLTRB(box,refx,refy);assert.ok(raw[2]<0);M.decodeSignedLTRB(raw,refx,refy).forEach((v,i)=>approx(v,box[i]))});
+test('Signed LTRB unconstrained outputs can reverse edges',()=>{assert.equal(M.validBox(M.decodeSignedLTRB([-2,1,-3,1],50,50)),false)});
+test('Ordered alternative guarantees strictly positive widths',()=>{for(const w of [-30,-1,0,20]){const b=M.decodeOrdered([5,-4,w,w],50,50);assert.ok(M.validBox(b));approx((b[0]+b[2])/2,55)}});
+test('center geometry strict boundary',()=>{const gt={cx:16,cy:16,w:4,h:4};assert.ok(M.geometryCenter(1,1,8,gt));assert.equal(M.geometryCenter(3,1,8,gt),false)});
+test('dynamic K uses floor(top10 iou sum) with minimum 1',()=>{assert.equal(M.dynamicK([.1,.2,.3]),1);assert.equal(M.dynamicK(Array(12).fill(.9)),9);assert.equal(M.dynamicK([]),0)});
+test('low score regime can hide valid geometric candidates',()=>{const p=M.simulate({gt:{cx:48,cy:64,w:4,h:4},stride:8,level:'low',threshold:.25});assert.ok(p.geometryCount>0);assert.ok(p.bestIoU>.5);assert.equal(p.passed.length,0);assert.match(M.diagnosis(p),/Score/)});
+test('score and geometry are distinct gates',()=>{const p=M.simulate({gt:{cx:48,cy:64,w:4,h:4},stride:8,level:'high',threshold:.25});assert.ok(p.passed.length>0);assert.equal(p.selected.length,p.k);assert.ok(p.matchedPassed.length>0)});
+test('threshold only changes the displayed score gate',()=>{const base={gt:{cx:48,cy:64,w:4,h:4},stride:8,level:'high'};const a=M.simulate({...base,threshold:.01}),b=M.simulate({...base,threshold:.999});assert.equal(a.bestIoU,b.bestIoU);assert.equal(a.k,b.k);assert.equal(b.passed.length,0)});
+test('moving GT changes geometric candidate set and costs',()=>{const a=M.simulate({gt:{cx:47,cy:64,w:4,h:4},stride:8,level:'high'}),b=M.simulate({gt:{cx:56,cy:64,w:4,h:4},stride:8,level:'high'});assert.notDeepEqual(a.pool.map(x=>x.id),b.pool.map(x=>x.id))});
