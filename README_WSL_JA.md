@@ -1,5 +1,7 @@
 # YOLOX Visual Academy v0.2 — WSL / GitHub Pages 公開手順
 
+> **2026-11-04更新：** この手順は初回リポジトリ作成用の旧文書です。既に `tattoqq9/yolox-visual-academy` が公開されているため、**`publish_new_repo.sh` は再実行しないでください。** 既存WSL環境では `git pull --ff-only`、詳細は [README.md](README.md) を参照してください。
+
 このZIPは**新規の独立リポジトリ**を作るためのものです。既存のVoxelエンジン／頭部検出研究リポジトリを変更しません。研究用ファイルや提供された元の人物写真も含まれません。
 
 ## 0. ダウンロードと配置

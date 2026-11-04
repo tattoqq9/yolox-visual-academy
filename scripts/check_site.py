@@ -50,11 +50,11 @@ def main():
             else: target=file
             if sp.fragment and target.suffix.lower()=='.html' and target in parser_map and sp.fragment not in parser_map[target].ids:
                 # Unit 02 uses #step-N as a JavaScript router; these are not DOM ids.
-                if target == (root/'lab/02-grid/index.html') and re.fullmatch(r'step-[1-5]',sp.fragment): continue
+                if (target == (root/'lab/02-grid/index.html') and re.fullmatch(r'step-[1-5]',sp.fragment)) or (target == (root/'lab/03-blocks/index.html') and re.fullmatch(r'step-[1-6]',sp.fragment)): continue
                 failures.append(f'{file.relative_to(root)}: anchor not found: {raw}')
-    for mandatory in ('lab/01-cnn/index.html','lab/02-grid/index.html',
-                      'learn/01-cnn.html','learn/02-stride-grid.html',
-                      'downloads/unit01_numpy_starter.zip','downloads/unit02_numpy_starter.zip',
+    for mandatory in ('lab/01-cnn/index.html','lab/02-grid/index.html','lab/03-blocks/index.html',
+                      'learn/01-cnn.html','learn/02-stride-grid.html','learn/03-blocks.html',
+                      'downloads/unit01_numpy_starter.zip','downloads/unit02_numpy_starter.zip','downloads/unit03a_numpy_starter.zip',
                       '.nojekyll'):
         if not (root/mandatory).is_file(): failures.append(f'missing essential: {mandatory}')
     for file in root.rglob('*'):

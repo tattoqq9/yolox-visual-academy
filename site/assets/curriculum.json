@@ -1,6 +1,6 @@
 {
   "title": "YOLOX Visual Academy",
-  "version": "0.2.0-prepublish",
+  "version": "0.3.0-preview",
   "locale": "ja-JP",
   "units": [
     {
@@ -36,9 +36,20 @@
       "starter": "downloads/unit02_numpy_starter.zip"
     },
     {
-      "id": "03-yolox",
-      "title": "YOLOX内部構造",
-      "status": "planned"
+      "id": "03a-blocks",
+      "title": "Conv・BatchNorm・SiLU・CSPを理解する",
+      "status": "preview-ready",
+      "chapters": [
+        "入力RGBとshape",
+        "Convの27項",
+        "BatchNorm統計",
+        "SiLU",
+        "CSP型の分岐と結合",
+        "NumPy再実装"
+      ],
+      "textbook": "learn/03-blocks.html",
+      "lab": "lab/03-blocks/index.html",
+      "starter": "downloads/unit03a_numpy_starter.zip"
     },
     {
       "id": "04-bbox",

@@ -4,30 +4,89 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check static site
+        run: python3 scripts/check_site.py site
+      - name: Check JavaScript syntax
+        run: |
+          node --check site/lab/01-cnn/app.js
+          node --check site/lab/02-grid/app.js
+          node --check site/lab/03-blocks/math.js
+          node --check site/lab/03-blocks/app.js
+      - name: Unit 03-A math compared with independent NumPy fixture
+        run: node --test tests/test_unit03_math.cjs
+      - name: Protect published Unit 01 and 02 resources
+        run: python3 -m unittest discover -s tests -p 'test_site_*.py' -v
+
+  browser-smoke:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install browser test dependencies
+        run: |
+          python -m pip install 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+      - name: Start a local static site server
+        run: |
+          python -m http.server 8765 --directory site --bind 127.0.0.1 > /tmp/yva-http.log 2>&1 &
+          python - <<'PY_SERVER'
+          import time,urllib.request
+          for attempt in range(30):
+              try:
+                  assert urllib.request.urlopen('http://127.0.0.1:8765/',timeout=1).status == 200
+                  break
+              except Exception:
+                  time.sleep(.25)
+          else:
+              raise RuntimeError('Local server did not start')
+          PY_SERVER
+      - name: Verify browser interactions for Units 01-03-A
+        run: python scripts/browser_smoke.py
+
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: [validate, browser-smoke]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Check static site
-        run: python3 scripts/check_site.py site
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-      - name: Upload static files
+      - name: Upload validated static files
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
